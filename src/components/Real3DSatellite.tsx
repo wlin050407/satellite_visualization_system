@@ -71,47 +71,58 @@ const LoadedSatelliteModel: React.FC<{
 }> = ({ modelUrl, scale, color, instanceId }) => {
   const groupRef = useRef<THREE.Group>(null)
   const [clonedScene, setClonedScene] = useState<THREE.Group | null>(null)
+  const [loadingError, setLoadingError] = useState<string | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
   
   console.log(`LoadedSatelliteModel[${instanceId}]: 开始加载模型 ${modelUrl}`)
   
+  // useGLTF本身会处理加载错误，我们通过Suspense边界来捕获
   const { scene } = useGLTF(modelUrl)
   
   // 创建模型的独立副本，避免多个实例冲突
   useEffect(() => {
     if (scene) {
+      setIsLoading(true)
       console.log(`LoadedSatelliteModel[${instanceId}]: 克隆模型场景`)
       
-      // 深度克隆场景，确保每个实例都有独立的材质和几何体
-      const cloned = scene.clone(true)
-      
-      // 为每个实例优化材质
-      cloned.traverse((child) => {
-        if (child instanceof THREE.Mesh) {
-          // 克隆材质，避免共享
-          if (child.material) {
-            if (Array.isArray(child.material)) {
-              child.material = child.material.map(mat => mat.clone())
-            } else {
-              child.material = child.material.clone()
-              
-              const material = child.material as THREE.MeshStandardMaterial
-              // 增强NASA模型的视觉效果
-              if (material.emissive) {
-                material.emissive.setHex(0x222222)
-              }
-              if (material.metalness !== undefined) {
-                material.metalness = Math.max(material.metalness, 0.3)
-              }
-              if (material.roughness !== undefined) {
-                material.roughness = Math.min(material.roughness, 0.7)
+      try {
+        // 深度克隆场景，确保每个实例都有独立的材质和几何体
+        const cloned = scene.clone(true)
+        
+        // 为每个实例优化材质
+        cloned.traverse((child) => {
+          if (child instanceof THREE.Mesh) {
+            // 克隆材质，避免共享
+            if (child.material) {
+              if (Array.isArray(child.material)) {
+                child.material = child.material.map(mat => mat.clone())
+              } else {
+                child.material = child.material.clone()
+                
+                const material = child.material as THREE.MeshStandardMaterial
+                // 增强NASA模型的视觉效果
+                if (material.emissive) {
+                  material.emissive.setHex(0x222222)
+                }
+                if (material.metalness !== undefined) {
+                  material.metalness = Math.max(material.metalness, 0.3)
+                }
+                if (material.roughness !== undefined) {
+                  material.roughness = Math.min(material.roughness, 0.7)
+                }
               }
             }
           }
-        }
-      })
-      
-      setClonedScene(cloned)
-      console.log(`LoadedSatelliteModel[${instanceId}]: 模型克隆和优化完成`)
+        })
+        
+        setClonedScene(cloned)
+        setIsLoading(false)
+        console.log(`LoadedSatelliteModel[${instanceId}]: 模型克隆和优化完成`)
+      } catch (error) {
+        console.error(`LoadedSatelliteModel[${instanceId}]: 模型处理失败`, error)
+        setLoadingError(`模型处理失败: ${error}`)
+        setIsLoading(false)
+      }
     }
   }, [scene, instanceId, color])
 
@@ -122,13 +133,31 @@ const LoadedSatelliteModel: React.FC<{
     }
   })
 
-  if (!clonedScene) {
+  // 如果有加载错误，显示错误信息并降级到简化模型
+  if (loadingError) {
+    console.warn(`LoadedSatelliteModel[${instanceId}]: 降级到简化模型，原因: ${loadingError}`)
+    return (
+      <SimpleSatelliteModel 
+        modelType="hubble" 
+        scale={scale} 
+        color="#ff6b6b" // 用红色表示这是降级模型
+      />
+    )
+  }
+
+  // 加载中状态
+  if (isLoading || !clonedScene) {
     return (
       <group ref={groupRef} scale={[scale, scale, scale]}>
-        {/* 加载中的占位符 */}
+        {/* 加载中的占位符 - 更明显的指示 */}
         <mesh>
-          <boxGeometry args={[0.1, 0.1, 0.1]} />
-          <meshBasicMaterial color="#666666" />
+          <boxGeometry args={[0.2, 0.2, 0.2]} />
+          <meshBasicMaterial color="#ffff00" />
+        </mesh>
+        {/* 旋转的加载指示 */}
+        <mesh position={[0.3, 0, 0]}>
+          <sphereGeometry args={[0.05, 8, 8]} />
+          <meshBasicMaterial color="#00ff00" />
         </mesh>
       </group>
     )
@@ -392,6 +421,35 @@ const SimpleSatelliteModel: React.FC<{
   )
 }
 
+// 错误边界组件
+class ModelErrorBoundary extends React.Component<
+  { children: React.ReactNode; fallback: React.ReactNode },
+  { hasError: boolean }
+> {
+  constructor(props: { children: React.ReactNode; fallback: React.ReactNode }) {
+    super(props)
+    this.state = { hasError: false }
+  }
+
+  static getDerivedStateFromError(error: Error) {
+    console.error('ModelErrorBoundary: 捕获到模型加载错误', error)
+    return { hasError: true }
+  }
+
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+    console.error('ModelErrorBoundary: 详细错误信息', error, errorInfo)
+  }
+
+  render() {
+    if (this.state.hasError) {
+      console.warn('ModelErrorBoundary: 显示降级模型')
+      return this.props.fallback
+    }
+
+    return this.props.children
+  }
+}
+
 // 主组件
 const Real3DSatellite: React.FC<Real3DSatelliteProps> = ({ 
   modelType, 
@@ -409,20 +467,28 @@ const Real3DSatellite: React.FC<Real3DSatelliteProps> = ({
   // 只有Hubble使用真实NASA哈勃模型
   if (modelType === 'hubble') {
     return (
-      <Suspense fallback={
+      <ModelErrorBoundary fallback={
         <SimpleSatelliteModel 
           modelType={modelType} 
           scale={scale} 
-          color={color} 
+          color="#ff6b6b" // 红色表示降级模型
         />
       }>
-        <LoadedSatelliteModel 
-          modelUrl={SATELLITE_MODELS.hubble}
-          scale={scale}
-          color={color}
-          instanceId={instanceId}
-        />
-      </Suspense>
+        <Suspense fallback={
+          <SimpleSatelliteModel 
+            modelType={modelType} 
+            scale={scale} 
+            color="#ffff00" // 黄色表示加载中
+          />
+        }>
+          <LoadedSatelliteModel 
+            modelUrl={SATELLITE_MODELS.hubble}
+            scale={scale}
+            color={color}
+            instanceId={instanceId}
+          />
+        </Suspense>
+      </ModelErrorBoundary>
     )
   }
   
