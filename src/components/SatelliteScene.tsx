@@ -1,6 +1,6 @@
 import React, { useRef, useMemo, Suspense, useState, useEffect } from 'react'
 import { useFrame } from '@react-three/fiber'
-import { Text } from '@react-three/drei'
+import { Text, Html } from '@react-three/drei'
 import { useAppStore } from '../store/appStore'
 import { SATELLITE_IDS, tleService } from '../services/tleService'
 import Real3DSatellite from './Real3DSatellite'
@@ -581,17 +581,26 @@ const Satellite: React.FC<{
         )}
 
         {/* 卫星标签 - 显示轨道模式 */}
-          {showLabels && (
-            <Text
+        {showLabels && (
+          <Html
             position={[0, 1.0, 0]}
-            fontSize={isSelected ? 0.17 : 0.16}
-            color={isSelected ? '#ffffff' : color}
-              anchorX="center"
-              anchorY="middle"
-            >
+            center
+            distanceFactor={8}
+            occlude
+            style={{
+              color: isSelected ? '#ffffff' : color,
+              fontSize: isSelected ? '14px' : '12px',
+              fontFamily: 'Arial, sans-serif',
+              fontWeight: 'bold',
+              textShadow: '1px 1px 2px rgba(0,0,0,0.8)',
+              userSelect: 'none',
+              pointerEvents: 'none',
+              whiteSpace: 'nowrap'
+            }}
+          >
             {name} {useRealOrbit ? '(TLE)' : '(SIM)'} {positionInfo}
-            </Text>
-          )}
+          </Html>
+        )}
 
         {/* 信号发射效果 - 只在选中时显示 */}
           {isSelected && (
