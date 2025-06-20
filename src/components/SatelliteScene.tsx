@@ -148,80 +148,23 @@ const Satellite: React.FC<{
   // 检查当前卫星是否被选中
   const isSelected = selectedSatellite === id
 
-  // 改进的高度缩放函数
-  const calculateRadius = (alt: number) => {
-    const earthRadius = 5
-    
-    if (useRealScale) {
-      // 真实比例模式：按真实尺寸比例缩放，但加上视觉增强因子
-      const earthRadiusKm = 6371
-      
-      // 为了让差异更明显，我们使用对数缩放
-      if (alt <= 1000) {
-        // 低轨道：基本真实比例
-        const realRadius = earthRadius + (alt / earthRadiusKm) * earthRadius
-        console.log(`${name}: 真实比例模式(LEO) - 高度=${alt}km, 轨道半径=${realRadius.toFixed(2)}`)
-        return realRadius
-      } else if (alt <= 25000) {
-        // 中轨道：稍微压缩但保持比例关系
-        const baseRadius = earthRadius + (1000 / earthRadiusKm) * earthRadius // LEO最大半径
-        const additionalRadius = ((alt - 1000) / earthRadiusKm) * earthRadius * 2 // 2倍因子让差异更明显
-        const realRadius = baseRadius + additionalRadius
-        console.log(`${name}: 真实比例模式(MEO) - 高度=${alt}km, 轨道半径=${realRadius.toFixed(2)}`)
-        return realRadius
-      } else {
-        // 高轨道：更大的视觉增强
-        const baseRadius = earthRadius + (25000 / earthRadiusKm) * earthRadius * 2
-        const additionalRadius = ((alt - 25000) / earthRadiusKm) * earthRadius * 3 // 3倍因子
-        const realRadius = baseRadius + additionalRadius
-        console.log(`${name}: 真实比例模式(GEO) - 高度=${alt}km, 轨道半径=${realRadius.toFixed(2)}`)
-        return realRadius
-      }
-    } else {
-      // 美观模式：为了显示效果优化的缩放
-      let beautifiedRadius
-      if (alt <= 1000) {
-        // 低地球轨道 (LEO): 200-1000km
-        beautifiedRadius = earthRadius + (alt / 400) * 1.0 // 400km对应1.0单位
-      } else if (alt <= 2000) {
-        // 中低轨道: 1000-2000km
-        beautifiedRadius = earthRadius + 1.0 + ((alt - 1000) / 1000) * 1.5
-      } else if (alt <= 25000) {
-        // 中地球轨道 (MEO): 2000-25000km，包括GPS
-        beautifiedRadius = earthRadius + 2.5 + ((alt - 2000) / 23000) * 6.0 // GPS约在8.5单位
-      } else {
-        // 地球同步轨道 (GEO): >25000km
-        beautifiedRadius = earthRadius + 8.5 + ((alt - 25000) / 10000) * 2.0
-      }
-      console.log(`${name}: 美观模式 - 高度=${alt}km, 轨道半径=${beautifiedRadius.toFixed(2)}`)
-      return beautifiedRadius
+  // 计算轨道缩放因子（只影响距离，不改变轨道形状）
+  const getOrbitScaleFactor = () => {
+    if (!useRealScale) {
+      return 1.0 // 美观模式：使用原始轨道半径
     }
-  }
-
-  // 获取真实轨道半径（基于卫星高度）
-  const getRealOrbitRadius = () => {
-    // 根据卫星名称获取真实高度
-    let realAltitude = 408 // 默认ISS高度
     
-    if (name.includes('ISS')) {
-      realAltitude = 408
-    } else if (name.includes('Hubble')) {
-      realAltitude = 547
-    } else if (name.includes('Starlink')) {
-      realAltitude = 550
-    } else if (name.includes('GPS')) {
-      realAltitude = 20200
-    } else if (name.includes('Tiangong')) {
-      realAltitude = 340
+    // 真实比例模式：根据卫星类型调整缩放
+    if (name.includes('GPS')) {
+      return 2.8 // GPS卫星显得更远
     } else if (name.includes('Sentinel')) {
-      realAltitude = 786
+      return 1.1 // Sentinel稍微远一点
+    } else {
+      return 0.85 // 其他低轨道卫星显得更近
     }
-    
-    return calculateRadius(realAltitude)
   }
 
-  // 动态计算轨道半径
-  const currentOrbitRadius = useRealScale ? getRealOrbitRadius() : orbitRadius
+  const orbitScaleFactor = getOrbitScaleFactor()
 
   // 加载真实TLE数据并计算轨道
   useEffect(() => {
@@ -291,22 +234,18 @@ const Satellite: React.FC<{
                     // 计算轨道高度
                     const altitude = distance - earthRadiusKm
                     
-                    // 根据useRealScale决定是否应用视觉高度增强因子
+                    // 应用固定的视觉高度增强因子（保持轨道形状美观）
                     let visualAltitude = altitude
-                    if (!useRealScale) {
-                      // 美观模式：应用视觉高度增强因子
-                      if (altitude < 1000) {
-                        // 低地球轨道：增强2倍视觉高度
-                        visualAltitude = altitude * 2.0 + 300 // 最小视觉间距300km
-                      } else if (altitude < 2000) {
-                        // 中低轨道：增强1.5倍
-                        visualAltitude = altitude * 1.5 + 500
-                      } else {
-                        // 高轨道：保持真实比例
-                        visualAltitude = altitude
-                      }
+                    if (altitude < 1000) {
+                      // 低地球轨道：增强2倍视觉高度
+                      visualAltitude = altitude * 2.0 + 300 // 最小视觉间距300km
+                    } else if (altitude < 2000) {
+                      // 中低轨道：增强1.5倍
+                      visualAltitude = altitude * 1.5 + 500
+                    } else {
+                      // 高轨道：保持真实比例
+                      visualAltitude = altitude
                     }
-                    // 真实模式：直接使用真实高度，不做视觉增强
                     
                     const visualDistance = earthRadiusKm + visualAltitude
                     const scale = sceneEarthRadius / earthRadiusKm
@@ -402,15 +341,15 @@ const Satellite: React.FC<{
       for (let i = 0; i <= 64; i++) {
         const angle = (i / 64) * Math.PI * 2
         // 使用动态计算的轨道半径
-        const x = Math.cos(angle) * currentOrbitRadius
+        const x = Math.cos(angle) * orbitRadius
         const y = 0
-        const z = Math.sin(angle) * currentOrbitRadius
+        const z = Math.sin(angle) * orbitRadius
         points.push(new THREE.Vector3(x, y, z))
       }
-      console.log(`${name}: 使用简化圆形轨道，半径=${currentOrbitRadius.toFixed(2)}, 模式=${useRealScale ? '真实' : '美观'}`)
+      console.log(`${name}: 使用简化圆形轨道，半径=${orbitRadius.toFixed(2)}, 模式=${useRealScale ? '真实' : '美观'}`)
       return new THREE.BufferGeometry().setFromPoints(points)
     }
-  }, [currentOrbitRadius, useRealOrbit, realOrbitPath, name, useRealScale])
+  }, [orbitRadius, useRealOrbit, realOrbitPath, name, useRealScale])
 
   // 创建高质量的真实卫星模型 - 使用NASA官方3D模型
   const satelliteModel = useMemo(() => (
@@ -538,8 +477,8 @@ const Satellite: React.FC<{
         const angle = accumulatedTimeRef.current * speed + initialAngle
         
         // 简单的圆形轨道运动
-        const x = Math.cos(angle) * currentOrbitRadius
-        const z = Math.sin(angle) * currentOrbitRadius
+        const x = Math.cos(angle) * orbitRadius
+        const z = Math.sin(angle) * orbitRadius
         const y = 0 // 在轨道平面内
         
         // 设置卫星在轨道坐标系中的位置
@@ -548,11 +487,11 @@ const Satellite: React.FC<{
         
         // 更新运动状态
         setCurrentAngle(angle * 180 / Math.PI)
-        setPositionInfo(`${(angle * 180 / Math.PI).toFixed(0)}°,R=${currentOrbitRadius.toFixed(1)}`)
+        setPositionInfo(`${(angle * 180 / Math.PI).toFixed(0)}°,R=${orbitRadius.toFixed(1)}`)
         
         // 简化模式的调试信息
         if (Math.floor(state.clock.elapsedTime) % 5 === 0 && Math.floor(state.clock.elapsedTime * 10) % 10 === 0) {
-          console.log(`${name} 圆形轨道: 角度=${(angle * 180 / Math.PI).toFixed(1)}°, 半径=${currentOrbitRadius}`)
+          console.log(`${name} 圆形轨道: 角度=${(angle * 180 / Math.PI).toFixed(1)}°, 半径=${orbitRadius}`)
         }
       }
       
@@ -614,12 +553,12 @@ const Satellite: React.FC<{
   }
 
   return (
-    <group ref={orbitRef} rotation={useRealOrbit ? [0, 0, 0] : [0, 0, orbitInclination * Math.PI / 180]}>
+    <group ref={orbitRef} rotation={useRealOrbit ? [0, 0, 0] : [0, 0, orbitInclination * Math.PI / 180]} scale={[orbitScaleFactor, orbitScaleFactor, orbitScaleFactor]}>
       {/* 轨道线 - 修复断开问题，使用正确的Line对象 */}
       <primitive object={new THREE.Line(orbitGeometry, new THREE.LineBasicMaterial({ 
         color: color, 
         transparent: true, 
-        opacity: isSelected ? 0.9 : (currentOrbitRadius > 15 ? 0.8 : 0.7),
+        opacity: isSelected ? 0.9 : (orbitRadius > 15 ? 0.8 : 0.7),
         linewidth: isSelected ? 4 : 2
       }))} />
       
@@ -687,7 +626,7 @@ const Satellite: React.FC<{
         )}
 
         {/* 卫星标签 - 显示轨道模式和半径 */}
-        {showLabels && (
+          {showLabels && (
           <BillboardText position={[0, 1.0, 0]} fontSize={isSelected ? 0.17 : 0.16} color={isSelected ? '#ffffff' : color}>
             {name} {useRealOrbit ? '(TLE)' : '(SIM)'} {useRealScale ? '[真实]' : '[美观]'} {positionInfo}
           </BillboardText>

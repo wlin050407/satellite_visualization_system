@@ -159,18 +159,18 @@ const ControlPanel: React.FC = () => {
         color: '#aaa'
       }}>
         <div style={{ marginBottom: '4px', color: '#60a5fa' }}>
-          轨道半径对比 ({useRealScale ? '真实模式' : '美观模式'}):
+          轨道缩放对比 ({useRealScale ? '真实模式' : '美观模式'}):
         </div>
-        <div>ISS: {useRealScale ? '5.32' : '6.02'} 单位</div>
-        <div>Hubble: {useRealScale ? '5.43' : '6.37'} 单位</div>
-        <div>Starlink: {useRealScale ? '5.43' : '6.38'} 单位</div>
+        <div>ISS: {useRealScale ? '5.8' : '6.8'} 单位 (×{useRealScale ? '0.85' : '1.0'})</div>
+        <div>Hubble: {useRealScale ? '6.1' : '7.2'} 单位 (×{useRealScale ? '0.85' : '1.0'})</div>
+        <div>Starlink: {useRealScale ? '6.4' : '7.5'} 单位 (×{useRealScale ? '0.85' : '1.0'})</div>
         <div style={{ color: useRealScale ? '#ffa500' : '#96ceb4' }}>
-          GPS: {useRealScale ? '35.92' : '12.25'} 单位 {useRealScale ? '←极远!' : ''}
+          GPS: {useRealScale ? '33.6' : '12.0'} 单位 (×{useRealScale ? '2.8' : '1.0'}) {useRealScale ? '←极远!' : ''}
         </div>
-        <div>Tiangong: {useRealScale ? '5.27' : '5.85'} 单位</div>
-        <div>Sentinel: {useRealScale ? '5.62' : '6.96'} 单位</div>
+        <div>Tiangong: {useRealScale ? '5.4' : '6.4'} 单位 (×{useRealScale ? '0.85' : '1.0'})</div>
+        <div>Sentinel: {useRealScale ? '10.8' : '9.8'} 单位 (×{useRealScale ? '1.1' : '1.0'})</div>
         <div style={{ marginTop: '4px', fontSize: '10px', color: '#666' }}>
-          {useRealScale ? '真实比例：GPS卫星距离地球约20,200km' : '美观比例：优化显示效果'}
+          {useRealScale ? '真实比例：简单缩放，保持轨道形状' : '美观比例：原始设计距离'}
         </div>
       </div>
 
