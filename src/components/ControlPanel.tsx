@@ -149,6 +149,31 @@ const ControlPanel: React.FC = () => {
         <div>速度: {timeSpeed}x</div>
       </div>
 
+      {/* 轨道半径对比表 */}
+      <div style={{ 
+        marginTop: '10px', 
+        padding: '8px', 
+        background: 'rgba(255,255,255,0.03)',
+        borderRadius: '4px',
+        fontSize: '11px',
+        color: '#aaa'
+      }}>
+        <div style={{ marginBottom: '4px', color: '#60a5fa' }}>
+          轨道半径对比 ({useRealScale ? '真实模式' : '美观模式'}):
+        </div>
+        <div>ISS: {useRealScale ? '5.32' : '6.02'} 单位</div>
+        <div>Hubble: {useRealScale ? '5.43' : '6.37'} 单位</div>
+        <div>Starlink: {useRealScale ? '5.43' : '6.38'} 单位</div>
+        <div style={{ color: useRealScale ? '#ffa500' : '#96ceb4' }}>
+          GPS: {useRealScale ? '35.92' : '12.25'} 单位 {useRealScale ? '←极远!' : ''}
+        </div>
+        <div>Tiangong: {useRealScale ? '5.27' : '5.85'} 单位</div>
+        <div>Sentinel: {useRealScale ? '5.62' : '6.96'} 单位</div>
+        <div style={{ marginTop: '4px', fontSize: '10px', color: '#666' }}>
+          {useRealScale ? '真实比例：GPS卫星距离地球约20,200km' : '美观比例：优化显示效果'}
+        </div>
+      </div>
+
       <div style={{ marginTop: '4px', color: '#a5b4fc', fontSize: '11px', lineHeight: '1.4' }}>
         地球固定视角：观察者跟随地球旋转，看不到地球自转<br/>
         惯性空间视角：观察者固定，可以看到地球自转和卫星运动
