@@ -88,7 +88,7 @@ function App() {
 
         <DraggablePanel
           title="地面站TT&C控制"
-          defaultPosition={{ x: 20, y: typeof window !== 'undefined' ? window.innerHeight - 300 : 500 }}
+          defaultPosition={{ x: 20, y: typeof window !== 'undefined' ? window.innerHeight - 250 : 550 }}
         >
           <GroundStationPanel />
         </DraggablePanel>
