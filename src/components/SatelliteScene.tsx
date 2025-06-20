@@ -1,5 +1,5 @@
 import React, { useRef, useMemo, Suspense, useState, useEffect } from 'react'
-import { useFrame } from '@react-three/fiber'
+import { useFrame, useThree } from '@react-three/fiber'
 import { Text, Html } from '@react-three/drei'
 import { useAppStore } from '../store/appStore'
 import { SATELLITE_IDS, tleService } from '../services/tleService'
@@ -68,6 +68,45 @@ const NASAEarth: React.FC<{ timeSpeed: number }> = ({ timeSpeed }) => {
           side={THREE.BackSide}
         />
       </mesh>
+    </group>
+  )
+}
+
+// 自定义Billboard文字组件 - 确保文字始终正确朝向
+const BillboardText: React.FC<{
+  position: [number, number, number]
+  fontSize: number
+  color: string
+  children: React.ReactNode
+}> = ({ position, fontSize, color, children }) => {
+  const textRef = useRef<any>(null)
+  const { camera } = useThree()
+  
+  useFrame(() => {
+    if (textRef.current && camera) {
+      // 让文字面向摄像机
+      textRef.current.lookAt(camera.position)
+      // 修正文字的上方向，防止倒置
+      textRef.current.up.set(0, 1, 0)
+    }
+  })
+  
+  return (
+    <group position={position}>
+      <Text
+        ref={textRef}
+        fontSize={fontSize}
+        color={color}
+        anchorX="center"
+        anchorY="middle"
+        outlineWidth={0.02}
+        outlineColor="#000000"
+        material-transparent={true}
+        material-depthWrite={false}
+        renderOrder={1000}
+      >
+        {children}
+      </Text>
     </group>
   )
 }
@@ -582,21 +621,9 @@ const Satellite: React.FC<{
 
         {/* 卫星标签 - 显示轨道模式 */}
         {showLabels && (
-          <Text
-            position={[0, 1.0, 0]}
-            fontSize={isSelected ? 0.17 : 0.16}
-            color={isSelected ? '#ffffff' : color}
-            anchorX="center"
-            anchorY="middle"
-            outlineWidth={0.02}
-            outlineColor="#000000"
-            material-transparent={true}
-            material-depthWrite={false}
-            material-side={THREE.DoubleSide}
-            renderOrder={1000}
-          >
+          <BillboardText position={[0, 1.0, 0]} fontSize={isSelected ? 0.17 : 0.16} color={isSelected ? '#ffffff' : color}>
             {name} {useRealOrbit ? '(TLE)' : '(SIM)'} {positionInfo}
-          </Text>
+          </BillboardText>
         )}
 
         {/* 信号发射效果 - 只在选中时显示 */}
