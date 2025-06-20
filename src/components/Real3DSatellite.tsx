@@ -3,21 +3,27 @@ import { useFrame } from '@react-three/fiber'
 import { useGLTF } from '@react-three/drei'
 import * as THREE from 'three'
 
+// 根据环境设置base路径
+const getBasePath = () => {
+  return process.env.NODE_ENV === 'production' ? '/satellite_visualization_system' : '';
+};
+
 // NASA官方3D模型路径 - 使用本地下载的真实模型
 const SATELLITE_MODELS = {
   // 使用真实的NASA GLB模型文件
-  iss: '/models/iss_nasa_official.glb', // 真实的NASA ISS官方模型 (166KB)
-  hubble: '/models/hubble.glb',          // 真实的NASA哈勃望远镜模型 (11MB)
-  cassini: '/models/cassini.glb',        // 真实的NASA卡西尼探测器模型 (5.6MB)
+  iss: `${getBasePath()}/models/iss_nasa_official.glb`, // 真实的NASA ISS官方模型 (166KB)
+  hubble: `${getBasePath()}/models/hubble.glb`,          // 真实的NASA哈勃望远镜模型 (11MB)
+  cassini: `${getBasePath()}/models/cassini.glb`,        // 真实的NASA卡西尼探测器模型 (5.6MB)
   
   // 未来可添加的模型
-  starlink: null,  // 暂时使用简化模型，等待真实Starlink模型
-  tiangong: null,  // 暂时使用ISS模型，等待真实天宫模型
+  starlink: `${getBasePath()}/models/starlink.glb`,      // Starlink卫星模型
+  tiangong: `${getBasePath()}/models/tiangong.glb`,      // 天宫空间站模型
+  sentinel: `${getBasePath()}/models/sentinel.glb`,       // Sentinel卫星模型
   
   // 备用简化模型（当真实模型不可用时）
   fallback: {
-    iss: '/models/iss_simple.glb',
-    hubble: '/models/hubble_simple.glb'
+    iss: `${getBasePath()}/models/iss_simple.glb`,
+    hubble: `${getBasePath()}/models/hubble_simple.glb`
   }
 }
 
@@ -33,7 +39,7 @@ const TestHubbleModel: React.FC<{ scale: number }> = ({ scale }) => {
   
   console.log(`🧪 TestHubbleModel: 直接加载哈勃模型，缩放=${scale}`)
   
-  const { scene } = useGLTF('/models/hubble.glb')
+  const { scene } = useGLTF(SATELLITE_MODELS.hubble)
   console.log(`TestHubbleModel: 哈勃模型加载成功`)
   
   // 自动旋转
