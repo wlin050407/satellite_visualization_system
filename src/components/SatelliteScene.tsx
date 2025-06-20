@@ -285,25 +285,28 @@ const Satellite: React.FC<{
                   // 更严格的距离检查，防止异常轨道
                   if (distance > 6000 && distance < 50000) { // 6000km到50000km之间
                     // 缩放到场景尺度（地球半径为5个单位）
-                    // 增加视觉高度因子，让轨道看起来不那么贴近地球
                     const earthRadiusKm = 6371.0
                     const sceneEarthRadius = 5.0
                     
                     // 计算轨道高度
                     const altitude = distance - earthRadiusKm
                     
-                    // 应用视觉高度增强因子
+                    // 根据useRealScale决定是否应用视觉高度增强因子
                     let visualAltitude = altitude
-                    if (altitude < 1000) {
-                      // 低地球轨道：增强2倍视觉高度
-                      visualAltitude = altitude * 2.0 + 300 // 最小视觉间距300km
-                    } else if (altitude < 2000) {
-                      // 中低轨道：增强1.5倍
-                      visualAltitude = altitude * 1.5 + 500
-                    } else {
-                      // 高轨道：保持真实比例
-                      visualAltitude = altitude
+                    if (!useRealScale) {
+                      // 美观模式：应用视觉高度增强因子
+                      if (altitude < 1000) {
+                        // 低地球轨道：增强2倍视觉高度
+                        visualAltitude = altitude * 2.0 + 300 // 最小视觉间距300km
+                      } else if (altitude < 2000) {
+                        // 中低轨道：增强1.5倍
+                        visualAltitude = altitude * 1.5 + 500
+                      } else {
+                        // 高轨道：保持真实比例
+                        visualAltitude = altitude
+                      }
                     }
+                    // 真实模式：直接使用真实高度，不做视觉增强
                     
                     const visualDistance = earthRadiusKm + visualAltitude
                     const scale = sceneEarthRadius / earthRadiusKm
@@ -384,23 +387,29 @@ const Satellite: React.FC<{
     }
     
     loadTLEData()
-  }, [noradId, name])
+  }, [noradId, name, useRealScale])
   
   // 创建轨道线几何体 - 使用真实轨道或简化轨道
   const orbitGeometry = useMemo(() => {
-    // 强制使用简化轨道来显示比例切换效果
-    const points = []
-    for (let i = 0; i <= 64; i++) {
-      const angle = (i / 64) * Math.PI * 2
-      // 使用动态计算的轨道半径
-      const x = Math.cos(angle) * currentOrbitRadius
-      const y = 0
-      const z = Math.sin(angle) * currentOrbitRadius
-      points.push(new THREE.Vector3(x, y, z))
+    // 优先使用真实轨道路径
+    if (useRealOrbit && realOrbitPath.length > 0) {
+      console.log(`${name}: 使用真实TLE轨道路径，${realOrbitPath.length} 个点`)
+      return new THREE.BufferGeometry().setFromPoints(realOrbitPath)
+    } else {
+      // 备用简化轨道
+      const points = []
+      for (let i = 0; i <= 64; i++) {
+        const angle = (i / 64) * Math.PI * 2
+        // 使用动态计算的轨道半径
+        const x = Math.cos(angle) * currentOrbitRadius
+        const y = 0
+        const z = Math.sin(angle) * currentOrbitRadius
+        points.push(new THREE.Vector3(x, y, z))
+      }
+      console.log(`${name}: 使用简化圆形轨道，半径=${currentOrbitRadius.toFixed(2)}, 模式=${useRealScale ? '真实' : '美观'}`)
+      return new THREE.BufferGeometry().setFromPoints(points)
     }
-    console.log(`${name}: 轨道几何体更新 - 半径=${currentOrbitRadius.toFixed(2)}, 模式=${useRealScale ? '真实' : '美观'}`)
-    return new THREE.BufferGeometry().setFromPoints(points)
-  }, [currentOrbitRadius, useRealScale, name])
+  }, [currentOrbitRadius, useRealOrbit, realOrbitPath, name, useRealScale])
 
   // 创建高质量的真实卫星模型 - 使用NASA官方3D模型
   const satelliteModel = useMemo(() => (
@@ -455,25 +464,28 @@ const Satellite: React.FC<{
               
               if (distance > 6000) { // 确保在地球外部
                 // 缩放到场景尺度（地球半径为5个单位）
-                // 增加视觉高度因子，让轨道看起来不那么贴近地球
                 const earthRadiusKm = 6371.0
                 const sceneEarthRadius = 5.0
                 
                 // 计算轨道高度
                 const altitude = distance - earthRadiusKm
                 
-                // 应用视觉高度增强因子
+                // 根据useRealScale决定是否应用视觉高度增强因子
                 let visualAltitude = altitude
-                if (altitude < 1000) {
-                  // 低地球轨道：增强2倍视觉高度
-                  visualAltitude = altitude * 2.0 + 300 // 最小视觉间距300km
-                } else if (altitude < 2000) {
-                  // 中低轨道：增强1.5倍
-                  visualAltitude = altitude * 1.5 + 500
-                } else {
-                  // 高轨道：保持真实比例
-                  visualAltitude = altitude
+                if (!useRealScale) {
+                  // 美观模式：应用视觉高度增强因子
+                  if (altitude < 1000) {
+                    // 低地球轨道：增强2倍视觉高度
+                    visualAltitude = altitude * 2.0 + 300 // 最小视觉间距300km
+                  } else if (altitude < 2000) {
+                    // 中低轨道：增强1.5倍
+                    visualAltitude = altitude * 1.5 + 500
+                  } else {
+                    // 高轨道：保持真实比例
+                    visualAltitude = altitude
+                  }
                 }
+                // 真实模式：直接使用真实高度，不做视觉增强
                 
                 const visualDistance = earthRadiusKm + visualAltitude
                 const scale = sceneEarthRadius / earthRadiusKm
@@ -673,7 +685,7 @@ const Satellite: React.FC<{
         {/* 卫星标签 - 显示轨道模式和半径 */}
         {showLabels && (
           <BillboardText position={[0, 1.0, 0]} fontSize={isSelected ? 0.17 : 0.16} color={isSelected ? '#ffffff' : color}>
-            {name} {useRealScale ? '(真实)' : '(美观)'} {positionInfo}
+            {name} {useRealOrbit ? '(TLE)' : '(SIM)'} {useRealScale ? '[真实]' : '[美观]'} {positionInfo}
           </BillboardText>
         )}
 
