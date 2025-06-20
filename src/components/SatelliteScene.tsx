@@ -79,94 +79,30 @@ const BillboardText: React.FC<{
   color: string
   children: React.ReactNode
 }> = ({ position, fontSize, color, children }) => {
-  const textRef = useRef<any>(null)
-  const { camera } = useThree()
-  const lastValidRotationRef = useRef<THREE.Euler | null>(null)
-  
-  useFrame(() => {
-    if (textRef.current && camera) {
-      try {
-        // 计算文字在屏幕上的投影位置
-        const textWorldPosition = new THREE.Vector3(...position)
-        const textScreenPosition = textWorldPosition.clone().project(camera)
-        
-        // 检查是否接近屏幕边缘
-        const edgeThreshold = 0.8 
-        const isNearEdge = Math.abs(textScreenPosition.x) > edgeThreshold || 
-                          Math.abs(textScreenPosition.y) > edgeThreshold ||
-                          textScreenPosition.z > 0.98
-        
-        // 计算从文字到摄像机的方向向量
-        const directionToCamera = new THREE.Vector3()
-        directionToCamera.subVectors(camera.position, textWorldPosition).normalize()
-        
-        // 检查方向向量是否有效
-        if (!isNaN(directionToCamera.x) && !isNaN(directionToCamera.y) && !isNaN(directionToCamera.z)) {
-          // 创建旋转矩阵
-          const lookAtMatrix = new THREE.Matrix4()
-          const up = new THREE.Vector3(0, 1, 0)
-          
-          // 处理奇异情况（接近垂直）
-          const upDot = Math.abs(directionToCamera.dot(up))
-          if (upDot > 0.99) {
-            up.set(1, 0, 0) // 使用侧向作为up向量
-          }
-          
-          lookAtMatrix.lookAt(textWorldPosition, camera.position, up)
-          const rotation = new THREE.Euler().setFromRotationMatrix(lookAtMatrix)
-          
-          if (!isNaN(rotation.x) && !isNaN(rotation.y) && !isNaN(rotation.z)) {
-            // 平滑过渡，防止突然翻转
-            if (lastValidRotationRef.current) {
-              const maxChange = isNearEdge ? Math.PI / 6 : Math.PI / 3
-              const deltaX = Math.abs(rotation.x - lastValidRotationRef.current.x)
-              const deltaY = Math.abs(rotation.y - lastValidRotationRef.current.y)
-              const deltaZ = Math.abs(rotation.z - lastValidRotationRef.current.z)
-              
-              if (deltaX > maxChange || deltaY > maxChange || deltaZ > maxChange) {
-                const lerpFactor = isNearEdge ? 0.1 : 0.2
-                rotation.x = THREE.MathUtils.lerp(lastValidRotationRef.current.x, rotation.x, lerpFactor)
-                rotation.y = THREE.MathUtils.lerp(lastValidRotationRef.current.y, rotation.y, lerpFactor)
-                rotation.z = THREE.MathUtils.lerp(lastValidRotationRef.current.z, rotation.z, lerpFactor)
-              }
-            }
-            
-            textRef.current.rotation.copy(rotation)
-            lastValidRotationRef.current = rotation.clone()
-          } else if (lastValidRotationRef.current) {
-            // 保持上次有效旋转
-            textRef.current.rotation.copy(lastValidRotationRef.current)
-          }
-        } else if (lastValidRotationRef.current) {
-          // 保持上次有效旋转
-          textRef.current.rotation.copy(lastValidRotationRef.current)
-        }
-      } catch (error) {
-        // 错误时保持稳定
-        if (lastValidRotationRef.current) {
-          textRef.current.rotation.copy(lastValidRotationRef.current)
-        }
-      }
-    }
-  })
-  
   return (
-    <group position={position}>
-      <Text
-        ref={textRef}
-        fontSize={fontSize}
-        color={color}
-        anchorX="center"
-        anchorY="middle"
-        outlineWidth={0.02}
-        outlineColor="#000000"
-        material-transparent={true}
-        material-depthWrite={false}
-        renderOrder={1000}
-      >
-        {children}
-      </Text>
-    </group>
+    <Html
+      position={position}
+      center
+      distanceFactor={8}
+      transform
+      sprite
+      style={{
+        color: color,
+        fontSize: `${Math.max(12, fontSize * 40)}px`,
+        fontWeight: 'bold',
+        textShadow: '1px 1px 3px rgba(0,0,0,0.9)',
+        pointerEvents: 'none',
+        userSelect: 'none',
+        whiteSpace: 'nowrap',
+        fontFamily: 'Arial, sans-serif',
+        transition: 'none',
+        backfaceVisibility: 'hidden',
+        WebkitBackfaceVisibility: 'hidden',
+        minWidth: 'max-content'
+      }}
+    >
+      {children}
+    </Html>
   )
 }
 
@@ -686,8 +622,8 @@ const Satellite: React.FC<{
 
         {/* 卫星标签 - 显示轨道模式和半径 */}
           {showLabels && (
-          <BillboardText position={[0, 1.0, 0]} fontSize={isSelected ? 0.17 : 0.16} color={isSelected ? '#ffffff' : color}>
-            {name} {useRealOrbit ? '(TLE)' : '(SIM)'} {useRealScale ? '[真实]' : '[美观]'} {positionInfo}
+          <BillboardText position={[0, 1.0, 0]} fontSize={isSelected ? 0.20 : 0.18} color={isSelected ? '#ffffff' : color}>
+            {name} {useRealOrbit ? '(TLE)' : '(SIM)'} {positionInfo}
           </BillboardText>
         )}
 
