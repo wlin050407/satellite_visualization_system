@@ -1,0 +1,121 @@
+import React, { useState, useRef, useEffect } from 'react'
+
+interface DraggablePanelProps {
+  title: string
+  defaultPosition: { x: number; y: number }
+  defaultCollapsed?: boolean
+  children: React.ReactNode
+  className?: string
+}
+
+const DraggablePanel: React.FC<DraggablePanelProps> = ({
+  title,
+  defaultPosition,
+  defaultCollapsed = false,
+  children,
+  className = ''
+}) => {
+  const [position, setPosition] = useState(defaultPosition)
+  const [isCollapsed, setIsCollapsed] = useState(defaultCollapsed)
+  const [isDragging, setIsDragging] = useState(false)
+  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 })
+  const panelRef = useRef<HTMLDivElement>(null)
+
+  // 处理拖拽开始
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (!panelRef.current) return
+    
+    const rect = panelRef.current.getBoundingClientRect()
+    setDragOffset({
+      x: e.clientX - rect.left,
+      y: e.clientY - rect.top
+    })
+    setIsDragging(true)
+    e.preventDefault()
+  }
+
+  // 处理拖拽移动
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isDragging) return
+
+      const newX = e.clientX - dragOffset.x
+      const newY = e.clientY - dragOffset.y
+
+      // 限制在窗口范围内
+      const maxX = window.innerWidth - (panelRef.current?.offsetWidth || 250)
+      const maxY = window.innerHeight - (panelRef.current?.offsetHeight || 100)
+
+      setPosition({
+        x: Math.max(0, Math.min(newX, maxX)),
+        y: Math.max(0, Math.min(newY, maxY))
+      })
+    }
+
+    const handleMouseUp = () => {
+      setIsDragging(false)
+    }
+
+    if (isDragging) {
+      document.addEventListener('mousemove', handleMouseMove)
+      document.addEventListener('mouseup', handleMouseUp)
+    }
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove)
+      document.removeEventListener('mouseup', handleMouseUp)
+    }
+  }, [isDragging, dragOffset])
+
+  return (
+    <div
+      ref={panelRef}
+      className={`draggable-panel ${className} ${isDragging ? 'dragging' : ''}`}
+      style={{
+        position: 'absolute',
+        left: position.x,
+        top: position.y,
+        cursor: isDragging ? 'grabbing' : 'default',
+        zIndex: isDragging ? 1001 : 1000
+      }}
+    >
+      {/* 标题栏 - 可拖拽区域 */}
+      <div
+        className="panel-header"
+        onMouseDown={handleMouseDown}
+        style={{
+          cursor: isDragging ? 'grabbing' : 'grab',
+          userSelect: 'none'
+        }}
+      >
+        <h3 style={{ margin: 0, flex: 1, fontSize: '14px' }}>{title}</h3>
+        <button
+          className="collapse-button"
+          onClick={() => setIsCollapsed(!isCollapsed)}
+          style={{
+            background: 'none',
+            border: 'none',
+            color: '#ccc',
+            cursor: 'pointer',
+            padding: '2px 6px',
+            fontSize: '12px',
+            borderRadius: '4px',
+            marginLeft: '8px'
+          }}
+          title={isCollapsed ? '展开' : '收起'}
+        >
+          {isCollapsed ? '▼' : '▲'}
+        </button>
+      </div>
+
+      {/* 面板内容 */}
+      {!isCollapsed && (
+        <div className="panel-content">
+          {children}
+        </div>
+      )}
+    </div>
+  )
+}
+
+export default DraggablePanel 

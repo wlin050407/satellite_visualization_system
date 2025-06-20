@@ -14,9 +14,7 @@ const ControlPanel: React.FC = () => {
   } = useAppStore()
 
   return (
-    <div className="ui-panel control-panel">
-      <h3>时间与显示控制</h3>
-      
+    <>
       <div className="control-group">
         <label>时间速度: {timeSpeed.toFixed(1)}x</label>
         <input
@@ -133,7 +131,7 @@ const ControlPanel: React.FC = () => {
         地球固定视角：观察者跟随地球旋转，看不到地球自转<br/>
         惯性空间视角：观察者固定，可以看到地球自转和卫星运动
       </div>
-    </div>
+    </>
   )
 }
 

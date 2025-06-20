@@ -6,6 +6,7 @@ import SatelliteScene from './components/SatelliteScene'
 import ControlPanel from './components/ControlPanel'
 import SatelliteInfoPanel from './components/SatelliteInfoPanel'
 import GroundStationPanel from './components/GroundStationPanel'
+import DraggablePanel from './components/DraggablePanel'
 
 function App() {
   const { setSelectedSatellite } = useAppStore()
@@ -68,11 +69,29 @@ function App() {
         />
       </Canvas>
 
-      {/* UI Panels */}
+      {/* UI Panels - 可拖拽版本 */}
       <div onClick={(e) => e.stopPropagation()}>
-        <ControlPanel />
-        <SatelliteInfoPanel />
-        <GroundStationPanel />
+        <DraggablePanel
+          title="时间与显示控制"
+          defaultPosition={{ x: 20, y: 20 }}
+        >
+          <ControlPanel />
+        </DraggablePanel>
+
+        <DraggablePanel
+          title="卫星信息"
+          defaultPosition={{ x: typeof window !== 'undefined' ? window.innerWidth - 320 : 1000, y: 20 }}
+          className="satellite-info-panel-wrapper"
+        >
+          <SatelliteInfoPanel />
+        </DraggablePanel>
+
+        <DraggablePanel
+          title="地面站TT&C控制"
+          defaultPosition={{ x: 20, y: typeof window !== 'undefined' ? window.innerHeight - 400 : 400 }}
+        >
+          <GroundStationPanel />
+        </DraggablePanel>
       </div>
     </div>
   )

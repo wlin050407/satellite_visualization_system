@@ -28,13 +28,11 @@ const GroundStationPanel: React.FC = () => {
   const selectedStationData = groundStations.find(s => s.id === selectedGroundStation)
 
   return (
-    <div className="ui-panel ground-station-panel">
-      <h3>地面站TT&C控制</h3>
-      
+    <>
       <div className="control-group">
         <label>选择地面站</label>
         <select 
-          value={selectedGroundStation}
+          value={selectedGroundStation || ''}
           onChange={(e) => {
             setSelectedGroundStation(e.target.value)
           }}
@@ -134,7 +132,7 @@ const GroundStationPanel: React.FC = () => {
           请选择地面站以启用TT&C功能
         </div>
       )}
-    </div>
+    </>
   )
 }
 
