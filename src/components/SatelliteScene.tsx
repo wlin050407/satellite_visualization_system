@@ -124,7 +124,8 @@ const Satellite: React.FC<{
   noradId: number
   timeSpeed: number
   showLabels: boolean
-}> = ({ orbitRadius, orbitInclination, name, color, speed, id, initialAngle, modelType, noradId, timeSpeed, showLabels }) => {
+  useRealScale: boolean
+}> = ({ orbitRadius, orbitInclination, name, color, speed, id, initialAngle, modelType, noradId, timeSpeed, showLabels, useRealScale }) => {
   const meshRef = useRef<THREE.Group>(null)
   const orbitRef = useRef<THREE.Group>(null)
   const selectedRingRef = useRef<THREE.Mesh>(null)
@@ -151,20 +152,53 @@ const Satellite: React.FC<{
   const calculateRadius = (alt: number) => {
     const earthRadius = 5
     
-    if (alt <= 1000) {
-      // 低地球轨道 (LEO): 200-1000km
-      return earthRadius + (alt / 400) * 1.0 // 400km对应1.0单位
-    } else if (alt <= 2000) {
-      // 中低轨道: 1000-2000km
-      return earthRadius + 1.0 + ((alt - 1000) / 1000) * 1.5
-    } else if (alt <= 25000) {
-      // 中地球轨道 (MEO): 2000-25000km，包括GPS
-      return earthRadius + 2.5 + ((alt - 2000) / 23000) * 6.0 // GPS约在8.5单位
+    if (useRealScale) {
+      // 真实比例模式：按真实尺寸比例缩放
+      const earthRadiusKm = 6371
+      const scaleRatio = earthRadius / earthRadiusKm
+      return earthRadius + (alt * scaleRatio)
     } else {
-      // 地球同步轨道 (GEO): >25000km
-      return earthRadius + 8.5 + ((alt - 25000) / 10000) * 2.0
+      // 美观模式：为了显示效果优化的缩放
+      if (alt <= 1000) {
+        // 低地球轨道 (LEO): 200-1000km
+        return earthRadius + (alt / 400) * 1.0 // 400km对应1.0单位
+      } else if (alt <= 2000) {
+        // 中低轨道: 1000-2000km
+        return earthRadius + 1.0 + ((alt - 1000) / 1000) * 1.5
+      } else if (alt <= 25000) {
+        // 中地球轨道 (MEO): 2000-25000km，包括GPS
+        return earthRadius + 2.5 + ((alt - 2000) / 23000) * 6.0 // GPS约在8.5单位
+      } else {
+        // 地球同步轨道 (GEO): >25000km
+        return earthRadius + 8.5 + ((alt - 25000) / 10000) * 2.0
+      }
     }
   }
+
+  // 获取真实轨道半径（基于卫星高度）
+  const getRealOrbitRadius = () => {
+    // 根据卫星名称获取真实高度
+    let realAltitude = 408 // 默认ISS高度
+    
+    if (name.includes('ISS')) {
+      realAltitude = 408
+    } else if (name.includes('Hubble')) {
+      realAltitude = 547
+    } else if (name.includes('Starlink')) {
+      realAltitude = 550
+    } else if (name.includes('GPS')) {
+      realAltitude = 20200
+    } else if (name.includes('Tiangong')) {
+      realAltitude = 340
+    } else if (name.includes('Sentinel')) {
+      realAltitude = 786
+    }
+    
+    return calculateRadius(realAltitude)
+  }
+
+  // 动态计算轨道半径
+  const currentOrbitRadius = useRealScale ? getRealOrbitRadius() : orbitRadius
 
   // 加载真实TLE数据并计算轨道
   useEffect(() => {
@@ -340,16 +374,16 @@ const Satellite: React.FC<{
       const points = []
       for (let i = 0; i <= 64; i++) {
         const angle = (i / 64) * Math.PI * 2
-        // 简单的圆形轨道，确保在地球外部
-        const x = Math.cos(angle) * orbitRadius
+        // 使用动态计算的轨道半径
+        const x = Math.cos(angle) * currentOrbitRadius
         const y = 0
-        const z = Math.sin(angle) * orbitRadius
+        const z = Math.sin(angle) * currentOrbitRadius
         points.push(new THREE.Vector3(x, y, z))
       }
-      console.log(`${name}: 使用简化圆形轨道，半径=${orbitRadius}`)
+      console.log(`${name}: 使用简化圆形轨道，半径=${currentOrbitRadius}`)
       return new THREE.BufferGeometry().setFromPoints(points)
     }
-  }, [orbitRadius, useRealOrbit, realOrbitPath, name])
+  }, [currentOrbitRadius, useRealOrbit, realOrbitPath, name, useRealScale])
 
   // 创建高质量的真实卫星模型 - 使用NASA官方3D模型
   const satelliteModel = useMemo(() => (
@@ -471,8 +505,8 @@ const Satellite: React.FC<{
         const angle = accumulatedTimeRef.current * speed + initialAngle
         
         // 简单的圆形轨道运动
-        const x = Math.cos(angle) * orbitRadius
-        const z = Math.sin(angle) * orbitRadius
+        const x = Math.cos(angle) * currentOrbitRadius
+        const z = Math.sin(angle) * currentOrbitRadius
         const y = 0 // 在轨道平面内
         
         // 设置卫星在轨道坐标系中的位置
@@ -485,7 +519,7 @@ const Satellite: React.FC<{
         
         // 简化模式的调试信息
         if (Math.floor(state.clock.elapsedTime) % 5 === 0 && Math.floor(state.clock.elapsedTime * 10) % 10 === 0) {
-          console.log(`${name} 圆形轨道: 角度=${(angle * 180 / Math.PI).toFixed(1)}°, 半径=${orbitRadius}`)
+          console.log(`${name} 圆形轨道: 角度=${(angle * 180 / Math.PI).toFixed(1)}°, 半径=${currentOrbitRadius}`)
         }
       }
       
@@ -552,7 +586,7 @@ const Satellite: React.FC<{
       <primitive object={new THREE.Line(orbitGeometry, new THREE.LineBasicMaterial({ 
         color: color, 
         transparent: true, 
-        opacity: isSelected ? 0.9 : (orbitRadius > 15 ? 0.8 : 0.7),
+        opacity: isSelected ? 0.9 : (currentOrbitRadius > 15 ? 0.8 : 0.7),
         linewidth: isSelected ? 4 : 2
       }))} />
       
@@ -656,7 +690,7 @@ const Satellite: React.FC<{
 }
 
 const SatelliteScene: React.FC = () => {
-  const { selectedSatellite, showOrbits, showLabels, followEarthRotation, setSelectedSatellite, timeSpeed } = useAppStore()
+  const { selectedSatellite, showOrbits, showLabels, followEarthRotation, setSelectedSatellite, timeSpeed, useRealScale } = useAppStore()
   const earthSystemRef = useRef<THREE.Group>(null) // 地球系统（地球+卫星）
   const sceneRef = useRef<THREE.Group>(null) // 整个场景
 
@@ -781,6 +815,7 @@ const SatelliteScene: React.FC = () => {
             noradId={satellite.noradId}
             timeSpeed={timeSpeed}
             showLabels={showLabels}
+            useRealScale={useRealScale}
           />
         </group>
       ))}

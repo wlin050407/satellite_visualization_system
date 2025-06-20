@@ -20,6 +20,10 @@ interface AppState {
   // 新增：地球自转跟随开关
   followEarthRotation: boolean
   setFollowEarthRotation: (follow: boolean) => void
+
+  // 新增：真实比例轨道开关
+  useRealScale: boolean
+  setUseRealScale: (useReal: boolean) => void
 }
 
 export const useAppStore = create<AppState>((set) => ({
@@ -40,4 +44,8 @@ export const useAppStore = create<AppState>((set) => ({
   // 新增：默认跟随地球自转
   followEarthRotation: true,
   setFollowEarthRotation: (follow) => set({ followEarthRotation: follow }),
+
+  // 新增：默认使用美观轨道，可切换到真实比例
+  useRealScale: false,
+  setUseRealScale: (useReal) => set({ useRealScale: useReal }),
 })) 

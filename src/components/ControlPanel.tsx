@@ -10,7 +10,9 @@ const ControlPanel: React.FC = () => {
     showLabels, 
     setShowLabels,
     followEarthRotation,
-    setFollowEarthRotation
+    setFollowEarthRotation,
+    useRealScale,
+    setUseRealScale
   } = useAppStore()
 
   return (
@@ -77,6 +79,25 @@ const ControlPanel: React.FC = () => {
         }}>
           <input
             type="checkbox"
+            checked={useRealScale}
+            onChange={(e) => setUseRealScale(e.target.checked)}
+            style={{ marginRight: '8px' }}
+          />
+          真实比例轨道
+        </label>
+        <small style={{ display: 'block', marginTop: '4px', color: '#aaa' }}>
+          {useRealScale ? '显示真实轨道尺寸' : '美观优化轨道'}
+        </small>
+      </div>
+
+      <div className="control-group">
+        <label style={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          marginBottom: '6px' 
+        }}>
+          <input
+            type="checkbox"
             checked={followEarthRotation}
             onChange={(e) => setFollowEarthRotation(e.target.checked)}
             style={{ marginRight: '8px' }}
@@ -124,6 +145,7 @@ const ControlPanel: React.FC = () => {
       }}>
         <div>轨道: {showOrbits ? '显示' : '隐藏'}</div>
         <div>标签: {showLabels ? '显示' : '隐藏'}</div>
+        <div>比例: {useRealScale ? '真实' : '美观'}</div>
         <div>速度: {timeSpeed}x</div>
       </div>
 
