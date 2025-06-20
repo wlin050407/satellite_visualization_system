@@ -46,14 +46,14 @@ const NASAEarth: React.FC<{ timeSpeed: number }> = ({ timeSpeed }) => {
 
   return (
     <group>
-      {/* 地球主体 - 不自转 */}
-      <mesh ref={earthRef}>
+      {/* 地球主体 - 修复纹理朝向 */}
+      <mesh ref={earthRef} rotation={[0, Math.PI, 0]}>
         <sphereGeometry args={[5, 64, 64]} />
         <primitive object={earthMaterial} />
       </mesh>
 
-      {/* 云层 - 独立缓慢旋转 */}
-      <mesh ref={cloudsRef}>
+      {/* 云层 - 独立缓慢旋转，同样修复朝向 */}
+      <mesh ref={cloudsRef} rotation={[0, Math.PI, 0]}>
         <sphereGeometry args={[5.02, 64, 64]} />
         <primitive object={cloudMaterial} />
       </mesh>
@@ -313,15 +313,16 @@ const Satellite: React.FC<{
                     const visualRadius = visualDistance * scale
                     
                     // ECI到场景坐标系的转换：
-                    // ECI_X -> Scene_X, ECI_Z -> Scene_Y, ECI_Y -> Scene_Z
-                    // 使用单位向量乘以视觉半径
+                    // ECI坐标系：X轴指向春分点，Y轴在赤道平面内，Z轴指向北极
+                    // 场景坐标系：X轴向右，Y轴向上，Z轴向前
+                    // 转换：ECI_X -> Scene_X, ECI_Z -> Scene_Y, -ECI_Y -> Scene_Z
                     const unitX = eciX / distance
                     const unitY = eciY / distance  
                     const unitZ = eciZ / distance
                     
                     const sceneX = unitX * visualRadius
                     const sceneY = unitZ * visualRadius  // ECI的Z轴（北极方向）对应场景的Y轴（向上）
-                    const sceneZ = unitY * visualRadius  // ECI的Y轴对应场景的Z轴
+                    const sceneZ = -unitY * visualRadius  // ECI的Y轴取负对应场景的Z轴（向前）
                     
                     // 检查场景坐标的合理性
                     const sceneDistance = Math.sqrt(sceneX * sceneX + sceneY * sceneY + sceneZ * sceneZ)
@@ -491,14 +492,17 @@ const Satellite: React.FC<{
                 const scale = sceneEarthRadius / earthRadiusKm
                 const visualRadius = visualDistance * scale
                 
-                // ECI到场景坐标系的转换（与轨道路径计算一致）
+                // ECI到场景坐标系的转换：
+                // ECI坐标系：X轴指向春分点，Y轴在赤道平面内，Z轴指向北极
+                // 场景坐标系：X轴向右，Y轴向上，Z轴向前
+                // 转换：ECI_X -> Scene_X, ECI_Z -> Scene_Y, -ECI_Y -> Scene_Z
                 const unitX = eciX / distance
                 const unitY = eciY / distance  
                 const unitZ = eciZ / distance
                 
                 const sceneX = unitX * visualRadius
                 const sceneY = unitZ * visualRadius  // ECI的Z轴（北极方向）对应场景的Y轴（向上）
-                const sceneZ = unitY * visualRadius  // ECI的Y轴对应场景的Z轴
+                const sceneZ = -unitY * visualRadius  // ECI的Y轴取负对应场景的Z轴（向前）
                 
                 // 设置卫星位置
                 meshRef.current.position.set(sceneX, sceneY, sceneZ)
