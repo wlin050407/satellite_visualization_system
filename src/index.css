@@ -380,13 +380,17 @@ button:disabled {
   }
 }
 
-/* DraggablePanel 样式 */
+/* DraggablePanel 样式 - 继承原有ui-panel样式 */
 .draggable-panel {
+  /* 继承所有ui-panel的样式 */
+  position: absolute;
   background: rgba(0, 0, 0, 0.85);
   backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 8px;
+  padding: 0; /* 重置padding，因为内容在panel-content中 */
   min-width: 250px;
+  z-index: 1000;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
   transition: box-shadow 0.2s ease;
 }
@@ -398,20 +402,31 @@ button:disabled {
 .panel-header {
   display: flex;
   align-items: center;
-  padding: 12px 16px 8px 16px;
+  padding: 16px 16px 8px 16px; /* 匹配原有的ui-panel h3 padding */
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  background: rgba(255, 255, 255, 0.02);
+  background: transparent; /* 移除背景色，保持原样 */
   border-radius: 8px 8px 0 0;
+  cursor: grab;
+  user-select: none;
 }
 
 .panel-header:hover {
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.02); /* 轻微的悬停效果 */
+}
+
+.panel-header.dragging {
+  cursor: grabbing;
 }
 
 .panel-header h3 {
-  color: #3b82f6;
-  font-weight: 600;
+  /* 完全匹配原有的ui-panel h3样式 */
   margin: 0;
+  margin-bottom: 0; /* 重置，因为在header中 */
+  color: #3b82f6;
+  font-size: 16px;
+  font-weight: 600;
+  border-bottom: none; /* 移除，因为header有border */
+  padding-bottom: 0;
   flex: 1;
 }
 
@@ -430,16 +445,20 @@ button:disabled {
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
+  width: auto !important; /* 覆盖button的width: 100% */
+  text-transform: none !important; /* 覆盖button的text-transform */
+  letter-spacing: normal !important; /* 覆盖button的letter-spacing */
 }
 
 .collapse-button:hover {
   background: rgba(255, 255, 255, 0.2) !important;
   color: #fff !important;
   transform: scale(1.1) !important;
+  box-shadow: none !important; /* 移除button的默认阴影 */
 }
 
 .panel-content {
-  padding: 16px;
+  padding: 16px; /* 匹配原有的ui-panel padding */
 }
 
 /* 拖拽时的样式 */
@@ -447,20 +466,26 @@ button:disabled {
   opacity: 0.9;
   transform: rotate(1deg);
   box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
+  z-index: 1001;
 }
 
-/* SatelliteInfoPanel 特殊样式 */
-.satellite-info-panel-wrapper .panel-content {
+/* SatelliteInfoPanel 特殊样式 - 保持原有的特殊布局 */
+.satellite-info-panel-wrapper {
   max-width: 300px;
+}
+
+.satellite-info-panel-wrapper .panel-content {
   max-height: calc(100vh - 80px);
   overflow: hidden;
   display: flex;
   flex-direction: column;
+  padding: 0; /* 移除padding，让satellite-info-content自己处理 */
 }
 
 .satellite-info-panel-wrapper .satellite-info-content {
   flex: 1;
   overflow-y: auto;
+  padding: 16px; /* 添加回padding */
   padding-right: 8px;
   margin-right: -8px;
 } 

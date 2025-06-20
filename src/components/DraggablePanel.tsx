@@ -72,36 +72,19 @@ const DraggablePanel: React.FC<DraggablePanelProps> = ({
       ref={panelRef}
       className={`draggable-panel ${className} ${isDragging ? 'dragging' : ''}`}
       style={{
-        position: 'absolute',
         left: position.x,
-        top: position.y,
-        cursor: isDragging ? 'grabbing' : 'default',
-        zIndex: isDragging ? 1001 : 1000
+        top: position.y
       }}
     >
       {/* 标题栏 - 可拖拽区域 */}
       <div
-        className="panel-header"
+        className={`panel-header ${isDragging ? 'dragging' : ''}`}
         onMouseDown={handleMouseDown}
-        style={{
-          cursor: isDragging ? 'grabbing' : 'grab',
-          userSelect: 'none'
-        }}
       >
-        <h3 style={{ margin: 0, flex: 1, fontSize: '14px' }}>{title}</h3>
+        <h3>{title}</h3>
         <button
           className="collapse-button"
           onClick={() => setIsCollapsed(!isCollapsed)}
-          style={{
-            background: 'none',
-            border: 'none',
-            color: '#ccc',
-            cursor: 'pointer',
-            padding: '2px 6px',
-            fontSize: '12px',
-            borderRadius: '4px',
-            marginLeft: '8px'
-          }}
           title={isCollapsed ? '展开' : '收起'}
         >
           {isCollapsed ? '▼' : '▲'}
