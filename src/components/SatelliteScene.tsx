@@ -81,13 +81,72 @@ const BillboardText: React.FC<{
 }> = ({ position, fontSize, color, children }) => {
   const textRef = useRef<any>(null)
   const { camera } = useThree()
+  const lastValidRotationRef = useRef<THREE.Euler | null>(null)
   
   useFrame(() => {
     if (textRef.current && camera) {
-      // 让文字面向摄像机
-      textRef.current.lookAt(camera.position)
-      // 修正文字的上方向，防止倒置
-      textRef.current.up.set(0, 1, 0)
+      try {
+        // 计算文字在屏幕上的投影位置
+        const textWorldPosition = new THREE.Vector3(...position)
+        const textScreenPosition = textWorldPosition.clone().project(camera)
+        
+        // 检查是否接近屏幕边缘
+        const edgeThreshold = 0.8 
+        const isNearEdge = Math.abs(textScreenPosition.x) > edgeThreshold || 
+                          Math.abs(textScreenPosition.y) > edgeThreshold ||
+                          textScreenPosition.z > 0.98
+        
+        // 计算从文字到摄像机的方向向量
+        const directionToCamera = new THREE.Vector3()
+        directionToCamera.subVectors(camera.position, textWorldPosition).normalize()
+        
+        // 检查方向向量是否有效
+        if (!isNaN(directionToCamera.x) && !isNaN(directionToCamera.y) && !isNaN(directionToCamera.z)) {
+          // 创建旋转矩阵
+          const lookAtMatrix = new THREE.Matrix4()
+          const up = new THREE.Vector3(0, 1, 0)
+          
+          // 处理奇异情况（接近垂直）
+          const upDot = Math.abs(directionToCamera.dot(up))
+          if (upDot > 0.99) {
+            up.set(1, 0, 0) // 使用侧向作为up向量
+          }
+          
+          lookAtMatrix.lookAt(textWorldPosition, camera.position, up)
+          const rotation = new THREE.Euler().setFromRotationMatrix(lookAtMatrix)
+          
+          if (!isNaN(rotation.x) && !isNaN(rotation.y) && !isNaN(rotation.z)) {
+            // 平滑过渡，防止突然翻转
+            if (lastValidRotationRef.current) {
+              const maxChange = isNearEdge ? Math.PI / 6 : Math.PI / 3
+              const deltaX = Math.abs(rotation.x - lastValidRotationRef.current.x)
+              const deltaY = Math.abs(rotation.y - lastValidRotationRef.current.y)
+              const deltaZ = Math.abs(rotation.z - lastValidRotationRef.current.z)
+              
+              if (deltaX > maxChange || deltaY > maxChange || deltaZ > maxChange) {
+                const lerpFactor = isNearEdge ? 0.1 : 0.2
+                rotation.x = THREE.MathUtils.lerp(lastValidRotationRef.current.x, rotation.x, lerpFactor)
+                rotation.y = THREE.MathUtils.lerp(lastValidRotationRef.current.y, rotation.y, lerpFactor)
+                rotation.z = THREE.MathUtils.lerp(lastValidRotationRef.current.z, rotation.z, lerpFactor)
+              }
+            }
+            
+            textRef.current.rotation.copy(rotation)
+            lastValidRotationRef.current = rotation.clone()
+          } else if (lastValidRotationRef.current) {
+            // 保持上次有效旋转
+            textRef.current.rotation.copy(lastValidRotationRef.current)
+          }
+        } else if (lastValidRotationRef.current) {
+          // 保持上次有效旋转
+          textRef.current.rotation.copy(lastValidRotationRef.current)
+        }
+      } catch (error) {
+        // 错误时保持稳定
+        if (lastValidRotationRef.current) {
+          textRef.current.rotation.copy(lastValidRotationRef.current)
+        }
+      }
     }
   })
   
