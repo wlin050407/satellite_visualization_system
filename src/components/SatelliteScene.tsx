@@ -582,24 +582,21 @@ const Satellite: React.FC<{
 
         {/* 卫星标签 - 显示轨道模式 */}
         {showLabels && (
-          <Html
+          <Text
             position={[0, 1.0, 0]}
-            center
-            distanceFactor={8}
-            occlude
-            style={{
-              color: isSelected ? '#ffffff' : color,
-              fontSize: isSelected ? '14px' : '12px',
-              fontFamily: 'Arial, sans-serif',
-              fontWeight: 'bold',
-              textShadow: '1px 1px 2px rgba(0,0,0,0.8)',
-              userSelect: 'none',
-              pointerEvents: 'none',
-              whiteSpace: 'nowrap'
-            }}
+            fontSize={isSelected ? 0.17 : 0.16}
+            color={isSelected ? '#ffffff' : color}
+            anchorX="center"
+            anchorY="middle"
+            outlineWidth={0.02}
+            outlineColor="#000000"
+            material-transparent={true}
+            material-depthWrite={false}
+            material-side={THREE.DoubleSide}
+            renderOrder={1000}
           >
             {name} {useRealOrbit ? '(TLE)' : '(SIM)'} {positionInfo}
-          </Html>
+          </Text>
         )}
 
         {/* 信号发射效果 - 只在选中时显示 */}
