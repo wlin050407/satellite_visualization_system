@@ -3,27 +3,29 @@ import { useFrame } from '@react-three/fiber'
 import { useGLTF } from '@react-three/drei'
 import * as THREE from 'three'
 
-// 根据环境设置base路径
-const getBasePath = () => {
-  return process.env.NODE_ENV === 'production' ? '/satellite_visualization_system' : '';
-};
+// 根据环境设置base路径 - 简化版本
+const BASE_PATH = '/satellite_visualization_system';
+
+// 开发环境检测 - 通过hostname判断
+const isDevelopment = typeof window !== 'undefined' && 
+  (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
 
 // NASA官方3D模型路径 - 使用本地下载的真实模型
 const SATELLITE_MODELS = {
   // 使用真实的NASA GLB模型文件
-  iss: `${getBasePath()}/models/iss_nasa_official.glb`, // 真实的NASA ISS官方模型 (166KB)
-  hubble: `${getBasePath()}/models/hubble.glb`,          // 真实的NASA哈勃望远镜模型 (11MB)
-  cassini: `${getBasePath()}/models/cassini.glb`,        // 真实的NASA卡西尼探测器模型 (5.6MB)
+  iss: `${isDevelopment ? '' : BASE_PATH}/models/iss_nasa_official.glb`, // 真实的NASA ISS官方模型 (166KB)
+  hubble: `${isDevelopment ? '' : BASE_PATH}/models/hubble.glb`,          // 真实的NASA哈勃望远镜模型 (11MB)
+  cassini: `${isDevelopment ? '' : BASE_PATH}/models/cassini.glb`,        // 真实的NASA卡西尼探测器模型 (5.6MB)
   
   // 未来可添加的模型
-  starlink: `${getBasePath()}/models/starlink.glb`,      // Starlink卫星模型
-  tiangong: `${getBasePath()}/models/tiangong.glb`,      // 天宫空间站模型
-  sentinel: `${getBasePath()}/models/sentinel.glb`,       // Sentinel卫星模型
+  starlink: `${isDevelopment ? '' : BASE_PATH}/models/starlink.glb`,      // Starlink卫星模型
+  tiangong: `${isDevelopment ? '' : BASE_PATH}/models/tiangong.glb`,      // 天宫空间站模型
+  sentinel: `${isDevelopment ? '' : BASE_PATH}/models/sentinel.glb`,       // Sentinel卫星模型
   
   // 备用简化模型（当真实模型不可用时）
   fallback: {
-    iss: `${getBasePath()}/models/iss_simple.glb`,
-    hubble: `${getBasePath()}/models/hubble_simple.glb`
+    iss: `${isDevelopment ? '' : BASE_PATH}/models/iss_simple.glb`,
+    hubble: `${isDevelopment ? '' : BASE_PATH}/models/hubble_simple.glb`
   }
 }
 
