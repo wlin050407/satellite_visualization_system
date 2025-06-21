@@ -244,10 +244,10 @@ const TimeControlPanel: React.FC = () => {
                   width: '40px',
                   height: '40px',
                   borderRadius: '50%',
-                  background: timeSpeed >= 1.5 
+                  background: timeSpeed > 0 
                     ? 'rgba(59, 130, 246, 0.1)' 
                     : 'rgba(255, 255, 255, 0.08)',
-                  border: timeSpeed >= 1.5 
+                  border: timeSpeed > 0 
                     ? '2px solid rgba(59, 130, 246, 0.3)' 
                     : '1px solid rgba(255, 255, 255, 0.15)',
                   cursor: 'pointer',
@@ -259,24 +259,24 @@ const TimeControlPanel: React.FC = () => {
                 }}
                 onMouseEnter={(e) => {
                   e.currentTarget.style.transform = 'scale(1.05)'
-                  e.currentTarget.style.background = timeSpeed >= 1.5 
+                  e.currentTarget.style.background = timeSpeed > 0 
                     ? 'rgba(59, 130, 246, 0.15)' 
                     : 'rgba(255, 255, 255, 0.12)'
-                  e.currentTarget.style.borderColor = timeSpeed >= 1.5 
+                  e.currentTarget.style.borderColor = timeSpeed > 0 
                     ? 'rgba(59, 130, 246, 0.4)' 
                     : 'rgba(255, 255, 255, 0.25)'
                 }}
                 onMouseLeave={(e) => {
                   e.currentTarget.style.transform = 'scale(1)'
-                  e.currentTarget.style.background = timeSpeed >= 1.5 
+                  e.currentTarget.style.background = timeSpeed > 0 
                     ? 'rgba(59, 130, 246, 0.1)' 
                     : 'rgba(255, 255, 255, 0.08)'
-                  e.currentTarget.style.borderColor = timeSpeed >= 1.5 
+                  e.currentTarget.style.borderColor = timeSpeed > 0 
                     ? 'rgba(59, 130, 246, 0.3)' 
                     : 'rgba(255, 255, 255, 0.15)'
                 }}
               >
-                <svg width="24" height="24" viewBox="0 0 24 24" fill={timeSpeed >= 1.5 ? '#3b82f6' : '#94a3b8'}>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill={timeSpeed > 0 ? '#3b82f6' : '#94a3b8'}>
                   <path d="M6 7l7 5-7 5V7zm7 0l7 5-7 5V7z"/>
                 </svg>
               </button>
@@ -290,7 +290,6 @@ const TimeControlPanel: React.FC = () => {
               step="0.1"
               value={timeSpeed}
               onChange={(e) => setTimeSpeed(parseFloat(e.target.value))}
-              disabled={isPaused}
               style={{
                 width: '100%',
                 marginBottom: '8px',
@@ -299,7 +298,7 @@ const TimeControlPanel: React.FC = () => {
                 borderRadius: '3px',
                 background: 'rgba(255,255,255,0.1)',
                 outline: 'none',
-                cursor: isPaused ? 'not-allowed' : 'pointer'
+                cursor: 'pointer'
               }}
             />
             <small style={{ display: 'block', color: '#64748b', fontSize: '11px', textAlign: 'center' }}>
