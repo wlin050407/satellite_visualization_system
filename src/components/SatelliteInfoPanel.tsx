@@ -7,7 +7,7 @@ import Real3DSatellite from './Real3DSatellite'
 import * as THREE from 'three'
 
 const SatelliteInfoPanel: React.FC = () => {
-  const { selectedSatellite, setSelectedSatellite } = useAppStore()
+  const { selectedSatellite, setSelectedSatellite, timeSpeed, getCurrentEffectiveTime } = useAppStore()
   const [realPosition, setRealPosition] = useState<SatellitePosition | null>(null)
   const [orbitalElements, setOrbitalElements] = useState<any>(null)
   const [showLargePreview, setShowLargePreview] = useState(false)
@@ -350,7 +350,7 @@ const SatelliteInfoPanel: React.FC = () => {
             <div className="control-group">
               <label>最后更新</label>
               <div style={{ fontSize: '12px', color: '#ccc' }}>
-                {new Date().toLocaleTimeString()}
+                {getCurrentEffectiveTime().toISOString().replace('T', ' ').replace('.000Z', ' GMT')}
               </div>
             </div>
 

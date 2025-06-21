@@ -120,7 +120,8 @@ const Satellite: React.FC<{
   timeSpeed: number
   showLabels: boolean
   useRealScale: boolean
-}> = ({ orbitRadius, orbitInclination, name, color, speed, id, initialAngle, modelType, noradId, timeSpeed, showLabels, useRealScale }) => {
+  getCurrentEffectiveTime: () => Date
+}> = ({ orbitRadius, orbitInclination, name, color, speed, id, initialAngle, modelType, noradId, timeSpeed, showLabels, useRealScale, getCurrentEffectiveTime }) => {
   const meshRef = useRef<THREE.Group>(null)
   const orbitRef = useRef<THREE.Group>(null)
   const selectedRingRef = useRef<THREE.Mesh>(null)
@@ -377,7 +378,7 @@ const Satellite: React.FC<{
       if (useRealOrbit && satrec && realOrbitPath.length > 0) {
         // 使用实时TLE计算当前位置
         try {
-          const now = new Date()
+          const now = getCurrentEffectiveTime()
           const accelerationFactor = 60 // 基础加速倍数
           const acceleratedTime = new Date(now.getTime() + accumulatedTimeRef.current * 1000 * accelerationFactor)
           
@@ -657,7 +658,7 @@ const Satellite: React.FC<{
 }
 
 const SatelliteScene: React.FC = () => {
-  const { selectedSatellite, showOrbits, showLabels, followEarthRotation, setSelectedSatellite, timeSpeed, useRealScale } = useAppStore()
+  const { selectedSatellite, showOrbits, showLabels, followEarthRotation, setSelectedSatellite, timeSpeed, useRealScale, getCurrentEffectiveTime } = useAppStore()
   const earthSystemRef = useRef<THREE.Group>(null) // 地球系统（地球+卫星）
   const sceneRef = useRef<THREE.Group>(null) // 整个场景
 
@@ -783,6 +784,7 @@ const SatelliteScene: React.FC = () => {
             timeSpeed={timeSpeed}
             showLabels={showLabels}
             useRealScale={useRealScale}
+            getCurrentEffectiveTime={getCurrentEffectiveTime}
           />
         </group>
       ))}

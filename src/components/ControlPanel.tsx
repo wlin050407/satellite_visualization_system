@@ -1,10 +1,9 @@
 import React from 'react'
 import { useAppStore } from '../store/appStore'
+import TimeControlPanel from './TimeControlPanel'
 
 const ControlPanel: React.FC = () => {
   const { 
-    timeSpeed, 
-    setTimeSpeed, 
     showOrbits, 
     setShowOrbits, 
     showLabels, 
@@ -12,32 +11,15 @@ const ControlPanel: React.FC = () => {
     followEarthRotation,
     setFollowEarthRotation,
     useRealScale,
-    setUseRealScale
+    setUseRealScale,
+    timeSpeed,
+    isTimeCustom
   } = useAppStore()
 
   return (
     <>
-      <div className="control-group">
-        <label>时间速度: {timeSpeed.toFixed(1)}x</label>
-        <input
-          type="range"
-          min="0.1"
-          max="5.0"
-          step="0.1"
-          value={timeSpeed}
-          onChange={(e) => setTimeSpeed(parseFloat(e.target.value))}
-        />
-        <small style={{ display: 'block', marginTop: '4px', color: '#aaa' }}>
-          控制卫星运动和地球自转速度
-        </small>
-      </div>
-
-      <div className="control-group">
-        <label>当前时间</label>
-        <div style={{ fontSize: '12px', color: '#ccc' }}>
-          {new Date().toLocaleString()}
-        </div>
-      </div>
+      {/* 时间控制面板 - 使用新的可折叠组件 */}
+      <TimeControlPanel />
 
       <div className="control-group">
         <label style={{ 
@@ -146,7 +128,8 @@ const ControlPanel: React.FC = () => {
         <div>轨道: {showOrbits ? '显示' : '隐藏'}</div>
         <div>标签: {showLabels ? '显示' : '隐藏'}</div>
         <div>比例: {useRealScale ? '真实' : '美观'}</div>
-        <div>速度: {timeSpeed}x</div>
+        <div>速度: {timeSpeed === 0 ? '暂停' : `${timeSpeed}x`}</div>
+        <div>时间: {isTimeCustom ? '自定义' : '实时'}</div>
       </div>
 
       {/* 轨道半径对比表 */}
