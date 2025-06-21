@@ -15,21 +15,16 @@ const isDevelopment = typeof window !== 'undefined' &&
 
 // NASA官方3D模型路径 - 使用本地下载的真实模型
 const SATELLITE_MODELS = {
-  // 使用真实的NASA GLB模型文件 - 开发环境直接使用相对路径
-  iss: '/models/iss_nasa_official.glb', // 真实的NASA ISS官方模型 (166KB)
+  // 使用真实的NASA GLB模型文件 - 只包含实际存在的模型
   hubble: '/models/hubble.glb',          // 真实的NASA哈勃望远镜模型 (11MB)
   cassini: '/models/cassini.glb',        // 真实的NASA卡西尼探测器模型 (5.6MB)
   
-  // 未来可添加的模型
-  starlink: '/models/starlink.glb',      // Starlink卫星模型
-  tiangong: '/models/tiangong.glb',      // 天宫空间站模型
-  sentinel: '/models/sentinel.glb',       // Sentinel卫星模型
-  
-  // 备用简化模型（当真实模型不可用时）
-  fallback: {
-    iss: '/models/iss_simple.glb',
-    hubble: '/models/hubble_simple.glb'
-  }
+  // 其他模型使用简化几何模型
+  // iss: 使用SimpleSatelliteModel
+  // starlink: 使用SimpleSatelliteModel
+  // tiangong: 使用SimpleSatelliteModel
+  // sentinel: 使用SimpleSatelliteModel
+  // gps: 使用SimpleSatelliteModel
 }
 
 interface Real3DSatelliteProps {
@@ -469,8 +464,16 @@ const Real3DSatellite: React.FC<Real3DSatelliteProps> = ({
   
   console.log(`Real3DSatellite[${instanceId}]: 渲染 ${modelType} 模型，缩放=${scale}`)
   
-  // 只有Hubble使用真实NASA哈勃模型
+  // 决定使用哪个模型
+  let modelUrl: string | null = null
   if (modelType === 'hubble') {
+    modelUrl = SATELLITE_MODELS.hubble
+  } else if (modelType === 'starlink') {
+    modelUrl = SATELLITE_MODELS.cassini // Starlink使用Cassini模型作为替代
+  }
+  
+  // 如果有真实3D模型，使用LoadedSatelliteModel
+  if (modelUrl) {
     return (
       <ModelErrorBoundary fallback={
         <SimpleSatelliteModel 
@@ -487,7 +490,7 @@ const Real3DSatellite: React.FC<Real3DSatelliteProps> = ({
           />
         }>
           <LoadedSatelliteModel 
-            modelUrl={SATELLITE_MODELS.hubble}
+            modelUrl={modelUrl}
             scale={scale}
             color={color}
             instanceId={instanceId}
@@ -498,7 +501,6 @@ const Real3DSatellite: React.FC<Real3DSatelliteProps> = ({
   }
   
   // 其他所有模型都使用对应的简化几何模型
-  // 不盗用别人的模型，每种卫星都有自己独特的外观
   return (
     <SimpleSatelliteModel 
       modelType={modelType} 

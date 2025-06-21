@@ -1,4 +1,5 @@
 import React, { useEffect, useState, Suspense } from 'react'
+import { createPortal } from 'react-dom'
 import { Canvas } from '@react-three/fiber'
 import { OrbitControls } from '@react-three/drei'
 import { useAppStore } from '../store/appStore'
@@ -241,7 +242,8 @@ const SatelliteInfoPanel: React.FC = () => {
                     : '0 4px 15px rgba(0, 0, 0, 0.3)',
                   border: isHovering 
                     ? '2px solid rgba(59, 130, 246, 0.4)' 
-                    : '1px solid #333'
+                    : '1px solid #333',
+                  position: 'relative'
                 }}
               >
                 <Canvas
@@ -419,153 +421,168 @@ const SatelliteInfoPanel: React.FC = () => {
 
       {/* 大预览弹窗 */}
       {showLargePreview && selectedSat && (
-        <div 
-          className="satellite-model-large-preview"
-          style={{
-            background: 'rgba(0, 0, 0, 0.9)',
-            backdropFilter: 'blur(10px)',
-            padding: '20px',
-            boxSizing: 'border-box'
-          }}
-          onClick={() => handleShowLargePreview(false)}
-        >
+        createPortal(
           <div 
-            className="satellite-model-dialog"
+            className="satellite-model-large-preview"
             style={{
-              width: 'min(80vw, 800px)',
-              height: 'min(80vh, 600px)',
-              minWidth: '300px',
-              minHeight: '200px',
-              background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f0f1e 100%)',
-              borderRadius: '16px',
-              border: '2px solid rgba(59, 130, 246, 0.3)',
-              boxShadow: '0 20px 60px rgba(59, 130, 246, 0.15)',
-              overflow: 'hidden',
-              transform: 'translate(0, 0)'
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              width: '100vw',
+              height: '100vh',
+              background: 'rgba(0, 0, 0, 0.95)',
+              backdropFilter: 'blur(10px)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              zIndex: 10000,
+              padding: '20px',
+              boxSizing: 'border-box'
             }}
-            onClick={(e) => e.stopPropagation()}
+            onClick={() => handleShowLargePreview(false)}
           >
-            {/* 关闭按钮 */}
-            <button
-              onClick={() => handleShowLargePreview(false)}
+            <div 
+              className="satellite-model-dialog"
               style={{
+                width: 'min(80vw, 800px)',
+                height: 'min(80vh, 600px)',
+                minWidth: '300px',
+                minHeight: '200px',
+                background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f0f1e 100%)',
+                borderRadius: '16px',
+                border: '2px solid rgba(59, 130, 246, 0.3)',
+                boxShadow: '0 20px 60px rgba(59, 130, 246, 0.15)',
+                overflow: 'hidden',
+                position: 'relative',
+                display: 'flex',
+                flexDirection: 'column'
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* 关闭按钮 */}
+              <button
+                onClick={() => handleShowLargePreview(false)}
+                style={{
+                  position: 'absolute',
+                  top: '16px',
+                  right: '16px',
+                  width: '40px',
+                  height: '40px',
+                  background: 'rgba(255, 255, 255, 0.1)',
+                  border: '1px solid rgba(255, 255, 255, 0.2)',
+                  borderRadius: '50%',
+                  color: '#fff',
+                  fontSize: '18px',
+                  cursor: 'pointer',
+                  zIndex: 10001,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  transition: 'all 0.3s ease',
+                  backdropFilter: 'blur(10px)'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.2)'
+                  e.currentTarget.style.transform = 'scale(1.1)'
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)'
+                  e.currentTarget.style.transform = 'scale(1)'
+                }}
+                title={t.closeButton}
+              >
+                ✕
+              </button>
+
+              {/* 标题 */}
+              <div style={{
                 position: 'absolute',
                 top: '16px',
-                right: '16px',
-                width: '40px',
-                height: '40px',
-                background: 'rgba(255, 255, 255, 0.1)',
-                border: '1px solid rgba(255, 255, 255, 0.2)',
-                borderRadius: '50%',
-                color: '#fff',
-                fontSize: '18px',
-                cursor: 'pointer',
+                left: '24px',
+                right: '70px',
+                color: '#60a5fa',
+                fontSize: '20px',
+                fontWeight: 'bold',
                 zIndex: 10001,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                transition: 'all 0.3s ease',
-                backdropFilter: 'blur(10px)'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.2)'
-                e.currentTarget.style.transform = 'scale(1.1)'
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)'
-                e.currentTarget.style.transform = 'scale(1)'
-              }}
-              title={t.closeButton}
-            >
-              ✕
-            </button>
+                textShadow: '0 2px 10px rgba(59, 130, 246, 0.4)',
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis'
+              }}>
+                {selectedSat.name} - {t.satelliteModelDetailPreview}
+              </div>
 
-            {/* 标题 */}
-            <div style={{
-              position: 'absolute',
-              top: '16px',
-              left: '24px',
-              right: '70px',
-              color: '#60a5fa',
-              fontSize: '20px',
-              fontWeight: 'bold',
-              zIndex: 10001,
-              textShadow: '0 2px 10px rgba(59, 130, 246, 0.4)',
-              whiteSpace: 'nowrap',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis'
-            }}>
-              {selectedSat.name} - {t.satelliteModelDetailPreview}
+              {/* Canvas容器 - 确保占满整个弹窗 */}
+              <div style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                width: '100%',
+                height: '100%',
+                zIndex: 1
+              }}>
+                <Canvas
+                  camera={{ position: [3, 2, 3], fov: 60 }}
+                  style={{ 
+                    width: '100%', 
+                    height: '100%'
+                  }}
+                >
+                  {/* 增强光照系统 - 大预览专用 */}
+                  <ambientLight intensity={1.0} color="#ffffff" />
+                  <directionalLight position={[5, 5, 5]} intensity={2.0} color="#ffffff" />
+                  <directionalLight position={[-5, -5, -5]} intensity={1.5} color="#b3d9ff" />
+                  <pointLight position={[3, 3, 3]} intensity={1.2} color="#ffffff" />
+                  <pointLight position={[-3, -3, -3]} intensity={1.0} color="#60a5fa" />
+                  <spotLight position={[0, 6, 0]} intensity={1.8} angle={0.6} penumbra={0.4} color="#ffffff" />
+                  <spotLight position={[0, -6, 0]} intensity={1.0} angle={0.8} penumbra={0.6} color="#3b82f6" />
+                  
+                  <Suspense fallback={null}>
+                    <Real3DSatellite 
+                      modelType={selectedSat.modelType} 
+                      scale={0.8}
+                      color={selectedSat.color}
+                    />
+                  </Suspense>
+                  
+                  <OrbitControls
+                    enablePan={true}
+                    enableZoom={true}
+                    enableRotate={true}
+                    minDistance={0.5}
+                    maxDistance={15}
+                    autoRotate={true}
+                    autoRotateSpeed={1}
+                  />
+                </Canvas>
+              </div>
+
+              {/* 操作提示 */}
+              <div style={{
+                position: 'absolute',
+                bottom: '16px',
+                left: '50%',
+                transform: 'translateX(-50%)',
+                color: '#aaa',
+                fontSize: '14px',
+                textAlign: 'center',
+                background: 'rgba(0, 0, 0, 0.6)',
+                padding: '8px 16px',
+                borderRadius: '20px',
+                border: '1px solid rgba(255, 255, 255, 0.1)',
+                backdropFilter: 'blur(10px)',
+                whiteSpace: 'nowrap',
+                maxWidth: 'calc(100% - 32px)',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                zIndex: 10001
+              }}>
+                {t.dragRotate} • {t.wheelZoom} • {t.rightClickToPan} • {t.autoRotate}
+              </div>
             </div>
-
-            {/* 大预览Canvas */}
-            <Canvas
-              camera={{ position: [3, 2, 3], fov: 60 }}
-              style={{ 
-                width: '100%', 
-                height: '100%'
-              }}
-            >
-              {/* 增强光照系统 - 大预览专用 */}
-              <ambientLight intensity={1.0} color="#ffffff" />
-              <directionalLight position={[5, 5, 5]} intensity={2.0} color="#ffffff" />
-              <directionalLight position={[-5, -5, -5]} intensity={1.5} color="#b3d9ff" />
-              <pointLight position={[3, 3, 3]} intensity={1.2} color="#ffffff" />
-              <pointLight position={[-3, -3, -3]} intensity={1.0} color="#60a5fa" />
-              <spotLight position={[0, 6, 0]} intensity={1.8} angle={0.6} penumbra={0.4} color="#ffffff" />
-              <spotLight position={[0, -6, 0]} intensity={1.0} angle={0.8} penumbra={0.6} color="#3b82f6" />
-              
-              {/* 星空背景 */}
-              <mesh>
-                <sphereGeometry args={[50, 32, 32]} />
-                <meshBasicMaterial 
-                  color="#000011" 
-                  side={THREE.BackSide} 
-                />
-              </mesh>
-              
-              <Suspense fallback={null}>
-                <Real3DSatellite 
-                  modelType={selectedSat.modelType} 
-                  scale={0.8}
-                  color={selectedSat.color}
-                />
-              </Suspense>
-              
-              <OrbitControls
-                enablePan={true}
-                enableZoom={true}
-                enableRotate={true}
-                minDistance={0.5}
-                maxDistance={15}
-                autoRotate={true}
-                autoRotateSpeed={1}
-              />
-            </Canvas>
-
-            {/* 操作提示 */}
-            <div style={{
-              position: 'absolute',
-              bottom: '16px',
-              left: '50%',
-              transform: 'translateX(-50%)',
-              color: '#aaa',
-              fontSize: '14px',
-              textAlign: 'center',
-              background: 'rgba(0, 0, 0, 0.6)',
-              padding: '8px 16px',
-              borderRadius: '20px',
-              border: '1px solid rgba(255, 255, 255, 0.1)',
-              backdropFilter: 'blur(10px)',
-              whiteSpace: 'nowrap',
-              maxWidth: 'calc(100% - 32px)',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis'
-            }}>
-              {t.dragRotate} • {t.wheelZoom} • {t.rightClickToPan} • {t.autoRotate}
-            </div>
-          </div>
-        </div>
+          </div>,
+          document.body
+        )
       )}
     </>
   )

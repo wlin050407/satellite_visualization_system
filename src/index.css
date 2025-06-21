@@ -390,10 +390,11 @@ button:disabled {
   backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 8px;
-  padding: 0; /* 重置padding，因为内容在panel-content中 */
+  padding: 16px;
   min-width: 250px;
-  z-index: 1000;
+  z-index: 1000 !important;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  isolation: isolate;
   transition: box-shadow 0.2s ease;
 }
 

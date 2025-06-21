@@ -1,6 +1,6 @@
 import React, { useRef, useMemo, Suspense, useState, useEffect } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
-import { Text, Html } from '@react-three/drei'
+import { Text, Html, Line } from '@react-three/drei'
 import { useAppStore } from '../store/appStore'
 import { SATELLITE_IDS, tleService } from '../services/tleService'
 import Real3DSatellite from './Real3DSatellite'
@@ -623,7 +623,11 @@ const Satellite: React.FC<{
 
         {/* 卫星标签 - 显示轨道模式和半径 */}
           {showLabels && (
-          <BillboardText position={[0, 1.0, 0]} fontSize={isSelected ? 0.20 : 0.18} color={isSelected ? '#ffffff' : color}>
+          <BillboardText
+            position={[0, 1.0, 0]}
+            fontSize={isSelected ? 0.20 : 0.18}
+            color={isSelected ? '#ffffff' : color}
+          >
             {name} {useRealOrbit ? '(TLE)' : '(SIM)'} {positionInfo}
           </BillboardText>
         )}
