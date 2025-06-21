@@ -1,7 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react'
+import { useTranslation } from '../i18n/useTranslation'
 
 interface DraggablePanelProps {
-  title: string
+  titleKey: string
   defaultPosition: { x: number; y: number }
   defaultCollapsed?: boolean
   children: React.ReactNode
@@ -9,17 +10,21 @@ interface DraggablePanelProps {
 }
 
 const DraggablePanel: React.FC<DraggablePanelProps> = ({
-  title,
+  titleKey,
   defaultPosition,
   defaultCollapsed = false,
   children,
   className = ''
 }) => {
+  const { t } = useTranslation()
   const [position, setPosition] = useState(defaultPosition)
   const [isCollapsed, setIsCollapsed] = useState(defaultCollapsed)
   const [isDragging, setIsDragging] = useState(false)
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 })
   const panelRef = useRef<HTMLDivElement>(null)
+
+  // 获取翻译文本
+  const title = t[titleKey as keyof typeof t] as string
 
   // 处理拖拽开始
   const handleMouseDown = (e: React.MouseEvent) => {
@@ -70,7 +75,7 @@ const DraggablePanel: React.FC<DraggablePanelProps> = ({
   return (
     <div
       ref={panelRef}
-      className={`draggable-panel ${className} ${isDragging ? 'dragging' : ''}`}
+      className={`draggable-panel unified-panel-size ${className} ${isDragging ? 'dragging' : ''}`}
       style={{
         left: position.x,
         top: position.y
@@ -85,7 +90,7 @@ const DraggablePanel: React.FC<DraggablePanelProps> = ({
         <button
           className="collapse-button"
           onClick={() => setIsCollapsed(!isCollapsed)}
-          title={isCollapsed ? '展开' : '收起'}
+          title={isCollapsed ? t.expand : t.collapse}
         >
           {isCollapsed ? '▼' : '▲'}
         </button>

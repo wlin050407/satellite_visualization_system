@@ -2,16 +2,37 @@ import React, { useEffect, useState, Suspense } from 'react'
 import { Canvas } from '@react-three/fiber'
 import { OrbitControls } from '@react-three/drei'
 import { useAppStore } from '../store/appStore'
+import { useTranslation } from '../i18n/useTranslation'
 import { tleService, SATELLITE_IDS, SatellitePosition } from '../services/tleService'
 import Real3DSatellite from './Real3DSatellite'
 import * as THREE from 'three'
 
 const SatelliteInfoPanel: React.FC = () => {
+  const { t } = useTranslation()
   const { selectedSatellite, setSelectedSatellite, timeSpeed, getCurrentEffectiveTime } = useAppStore()
   const [realPosition, setRealPosition] = useState<SatellitePosition | null>(null)
   const [orbitalElements, setOrbitalElements] = useState<any>(null)
   const [showLargePreview, setShowLargePreview] = useState(false)
   const [isHovering, setIsHovering] = useState(false)
+
+  // 处理大预览弹窗的显示/隐藏，防止页面滚动
+  const handleShowLargePreview = (show: boolean) => {
+    setShowLargePreview(show)
+    
+    // 防止弹窗打开时页面滚动
+    if (show) {
+      document.body.classList.add('modal-open')
+    } else {
+      document.body.classList.remove('modal-open')
+    }
+  }
+
+  // 组件卸载时清理body类名
+  useEffect(() => {
+    return () => {
+      document.body.classList.remove('modal-open')
+    }
+  }, [])
 
   const satellites = [
     { 
@@ -139,7 +160,7 @@ const SatelliteInfoPanel: React.FC = () => {
       <div className="satellite-info-content">
         {/* 卫星选择下拉框 */}
         <div className="control-group">
-          <label>选择卫星</label>
+          <label>{t.selectSatellite}</label>
           <select 
             value={selectedSatellite || ''} 
             onChange={(e) => setSelectedSatellite(e.target.value || null)}
@@ -165,7 +186,7 @@ const SatelliteInfoPanel: React.FC = () => {
             }}
           >
             <option value="" style={{ background: '#333', color: '#fff' }}>
-              请选择卫星...
+              {t.pleaseSelectSatellite}...
             </option>
             {satellites.map((satellite) => (
               <option 
@@ -205,12 +226,12 @@ const SatelliteInfoPanel: React.FC = () => {
 
             {/* 3D模型预览区域 - 美观太空主题版 */}
             <div className="control-group satellite-model-preview-container">
-              <label>卫星模型预览</label>
+              <label>{t.satelliteModelPreview}</label>
               <div 
                 className={`satellite-model-preview ${isHovering ? 'hover' : ''}`}
                 onMouseEnter={() => setIsHovering(true)}
                 onMouseLeave={() => setIsHovering(false)}
-                onClick={() => setShowLargePreview(true)}
+                onClick={() => handleShowLargePreview(true)}
                 style={{ 
                   cursor: 'pointer',
                   transition: 'all 0.3s ease',
@@ -275,39 +296,39 @@ const SatelliteInfoPanel: React.FC = () => {
                     border: '1px solid rgba(255, 255, 255, 0.3)',
                     backdropFilter: 'blur(10px)'
                   }}>
-                    点击查看大图
+                    {t.clickToViewLarge}
                   </div>
                 )}
               </div>
               <div style={{ fontSize: '9px', color: '#666', textAlign: 'center', marginBottom: '8px' }}>
-                拖拽旋转 • 滚轮缩放 • 点击放大
+                {t.dragRotate} • {t.wheelZoom} • {t.clickToZoom}
               </div>
             </div>
             
             <div className="control-group">
-              <label>轨道参数 (TLE数据)</label>
+              <label>{t.orbitalParameters}</label>
               <div style={{ fontSize: '12px' }}>
                 {orbitalElements ? (
                   <>
-                    高度: {orbitalElements.altitude.toFixed(1)} km<br/>
-                    倾角: {orbitalElements.inclination.toFixed(2)}°<br/>
-                    偏心率: {orbitalElements.eccentricity.toFixed(6)}<br/>
-                    轨道周期: {orbitalElements.period.toFixed(1)} 分钟<br/>
-                    平均运动: {orbitalElements.meanMotion.toFixed(8)} 转/天
+                    {t.positionAltitude}: {orbitalElements.altitude.toFixed(1)} km<br/>
+                    {t.inclination}: {orbitalElements.inclination.toFixed(2)}°<br/>
+                    {t.eccentricity}: {orbitalElements.eccentricity.toFixed(6)}<br/>
+                    {t.orbitPeriod}: {orbitalElements.period.toFixed(1)} {t.minutes}<br/>
+                    {t.meanMotion}: {orbitalElements.meanMotion.toFixed(8)} 转/天
                   </>
                 ) : (
                   <>
-                    高度: {selectedSat.altitude} km<br/>
-                    倾角: {selectedSat.inclination}°<br/>
-                    轨道半径: {selectedSat.orbitRadius.toFixed(1)} 单位<br/>
-                    偏心率: 计算中...
+                    {t.positionAltitude}: {selectedSat.altitude} km<br/>
+                    {t.inclination}: {selectedSat.inclination}°<br/>
+                    {t.orbitRadius}: {selectedSat.orbitRadius.toFixed(1)} {t.unit}<br/>
+                    {t.eccentricity}: {t.calculating}...
                   </>
                 )}
               </div>
             </div>
 
             <div className="control-group">
-              <label>实时位置 {realPosition ? '(TLE实时)' : '(模拟)'}</label>
+              <label>{t.realPosition} {realPosition ? `(${t.tleRealTime})` : `(${t.simulation})`}</label>
               <div style={{ fontSize: '12px', fontFamily: 'monospace' }}>
                 {(() => {
                   const pos = getCurrentPosition(selectedSat)
@@ -315,10 +336,10 @@ const SatelliteInfoPanel: React.FC = () => {
                     <>
                       {realPosition ? (
                         <>
-                          经度: {pos.x}°<br/>
-                          纬度: {pos.y}°<br/>
-                          高度: {pos.z} km<br/>
-                          速度: {realPosition.velocity.toFixed(2)} km/s
+                          {t.positionLongitude}: {pos.x}°<br/>
+                          {t.positionLatitude}: {pos.y}°<br/>
+                          {t.positionAltitude}: {pos.z} km<br/>
+                          {t.positionVelocity}: {realPosition.velocity.toFixed(2)} km/s
                         </>
                       ) : (
                         <>
@@ -334,31 +355,31 @@ const SatelliteInfoPanel: React.FC = () => {
             </div>
 
             <div className="control-group">
-              <label>轨道特征</label>
+              <label>{t.orbitCharacteristics}</label>
               <div style={{ fontSize: '12px' }}>
-                {selectedSat.inclination < 30 && '低倾角轨道'}
-                {selectedSat.inclination >= 30 && selectedSat.inclination < 60 && '中倾角轨道'}
-                {selectedSat.inclination >= 60 && selectedSat.inclination < 90 && '高倾角轨道'}
-                {selectedSat.inclination >= 90 && '极地轨道'}
+                {selectedSat.inclination < 30 && t.lowInclinationOrbit}
+                {selectedSat.inclination >= 30 && selectedSat.inclination < 60 && t.mediumInclinationOrbit}
+                {selectedSat.inclination >= 60 && selectedSat.inclination < 90 && t.highInclinationOrbit}
+                {selectedSat.inclination >= 90 && t.polarOrbit}
                 <br/>
-                {selectedSat.altitude < 1000 && '低地球轨道 (LEO)'}
-                {selectedSat.altitude >= 1000 && selectedSat.altitude < 35000 && '中地球轨道 (MEO)'}
-                {selectedSat.altitude >= 35000 && '地球同步轨道 (GEO)'}
+                {selectedSat.altitude < 1000 && t.lowEarthOrbit}
+                {selectedSat.altitude >= 1000 && selectedSat.altitude < 35000 && t.mediumEarthOrbit}
+                {selectedSat.altitude >= 35000 && t.geostationaryOrbit}
               </div>
             </div>
 
             <div className="control-group">
-              <label>最后更新</label>
+              <label>{t.lastUpdated}</label>
               <div style={{ fontSize: '12px', color: '#ccc' }}>
                 {getCurrentEffectiveTime().toISOString().replace('T', ' ').replace('.000Z', ' GMT')}
               </div>
             </div>
 
             <div className="control-group">
-              <label>TLE数据 (NORAD ID: {selectedSat.noradId})</label>
+              <label>{t.tleData} (NORAD ID: {selectedSat.noradId})</label>
               <div style={{ fontSize: '10px', fontFamily: 'monospace', color: '#aaa' }}>
                 {orbitalElements ? (
-                  `实时TLE数据已获取\n轨道周期: ${orbitalElements.period.toFixed(1)}分钟\n平均运动: ${orbitalElements.meanMotion.toFixed(8)}`
+                  `${t.realTimeTleDataObtained}\n${t.orbitPeriod}: ${orbitalElements.period.toFixed(1)}${t.minutes}\n${t.meanMotion}: ${orbitalElements.meanMotion.toFixed(8)}`
                 ) : (
                   `1 ${selectedSat.noradId}U 98067A   21001.00000000\n2 ${selectedSat.noradId}  ${selectedSat.inclination.toFixed(4)} 339.2000 0002829`
                 )}
@@ -368,7 +389,7 @@ const SatelliteInfoPanel: React.FC = () => {
         )}
 
         <div className="control-group">
-          <label>快速选择</label>
+          <label>{t.quickSelect}</label>
           <div className="satellite-list-container">
             <div className="satellite-list">
               {satellites.map((satellite) => (
@@ -399,39 +420,34 @@ const SatelliteInfoPanel: React.FC = () => {
       {/* 大预览弹窗 */}
       {showLargePreview && selectedSat && (
         <div 
+          className="satellite-model-large-preview"
           style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            width: '100vw',
-            height: '100vh',
             background: 'rgba(0, 0, 0, 0.9)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 10000,
-            backdropFilter: 'blur(10px)'
+            backdropFilter: 'blur(10px)',
+            padding: '20px',
+            boxSizing: 'border-box'
           }}
-          onClick={() => setShowLargePreview(false)}
+          onClick={() => handleShowLargePreview(false)}
         >
           <div 
+            className="satellite-model-dialog"
             style={{
-              width: '80vw',
-              height: '80vh',
-              maxWidth: '800px',
-              maxHeight: '600px',
+              width: 'min(80vw, 800px)',
+              height: 'min(80vh, 600px)',
+              minWidth: '300px',
+              minHeight: '200px',
               background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f0f1e 100%)',
               borderRadius: '16px',
               border: '2px solid rgba(59, 130, 246, 0.3)',
               boxShadow: '0 20px 60px rgba(59, 130, 246, 0.15)',
-              position: 'relative',
-              overflow: 'hidden'
+              overflow: 'hidden',
+              transform: 'translate(0, 0)'
             }}
             onClick={(e) => e.stopPropagation()}
           >
             {/* 关闭按钮 */}
             <button
-              onClick={() => setShowLargePreview(false)}
+              onClick={() => handleShowLargePreview(false)}
               style={{
                 position: 'absolute',
                 top: '16px',
@@ -459,6 +475,7 @@ const SatelliteInfoPanel: React.FC = () => {
                 e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)'
                 e.currentTarget.style.transform = 'scale(1)'
               }}
+              title={t.closeButton}
             >
               ✕
             </button>
@@ -468,13 +485,17 @@ const SatelliteInfoPanel: React.FC = () => {
               position: 'absolute',
               top: '16px',
               left: '24px',
+              right: '70px',
               color: '#60a5fa',
               fontSize: '20px',
               fontWeight: 'bold',
               zIndex: 10001,
-              textShadow: '0 2px 10px rgba(59, 130, 246, 0.4)'
+              textShadow: '0 2px 10px rgba(59, 130, 246, 0.4)',
+              whiteSpace: 'nowrap',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis'
             }}>
-              {selectedSat.name} - 3D模型详细预览
+              {selectedSat.name} - {t.satelliteModelDetailPreview}
             </div>
 
             {/* 大预览Canvas */}
@@ -535,9 +556,13 @@ const SatelliteInfoPanel: React.FC = () => {
               padding: '8px 16px',
               borderRadius: '20px',
               border: '1px solid rgba(255, 255, 255, 0.1)',
-              backdropFilter: 'blur(10px)'
+              backdropFilter: 'blur(10px)',
+              whiteSpace: 'nowrap',
+              maxWidth: 'calc(100% - 32px)',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis'
             }}>
-              拖拽旋转 • 滚轮缩放 • 右键平移 • 自动旋转
+              {t.dragRotate} • {t.wheelZoom} • {t.rightClickToPan} • {t.autoRotate}
             </div>
           </div>
         </div>

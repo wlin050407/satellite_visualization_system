@@ -183,11 +183,13 @@ input[type="range"] {
   border-radius: 2px;
   outline: none;
   -webkit-appearance: none;
+  appearance: none;
   cursor: pointer;
 }
 
 input[type="range"]::-webkit-slider-thumb {
   -webkit-appearance: none;
+  appearance: none;
   width: 16px;
   height: 16px;
   background: #3b82f6;
@@ -488,4 +490,194 @@ button:disabled {
   padding: 16px; /* 添加回padding */
   padding-right: 8px;
   margin-right: -8px;
+}
+
+/* 统一面板尺寸 - 确保中英文切换时面板大小一致 */
+.unified-panel-size {
+  min-width: 350px;
+  max-width: 400px;
+  width: 350px; /* 固定宽度确保一致性 */
+}
+
+.unified-panel-size .panel-content {
+  min-height: 250px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.unified-panel-size .panel-header h3 {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 280px; /* 调整以适应更宽的面板 */
+}
+
+/* 特殊处理卫星信息面板 - 保持其特殊布局 */
+.satellite-info-panel-wrapper.unified-panel-size {
+  min-width: 320px;
+  max-width: 370px;
+  width: 320px; /* 卫星信息面板稍微窄一些 */
+}
+
+.satellite-info-panel-wrapper.unified-panel-size .panel-content {
+  min-height: 400px;
+}
+
+/* 确保控件在统一尺寸下的布局 */
+.unified-panel-size .control-group {
+  width: 100%;
+  box-sizing: border-box;
+  margin-bottom: 12px;
+}
+
+.unified-panel-size input[type="range"],
+.unified-panel-size input[type="text"],
+.unified-panel-size select {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* 数据表格在统一尺寸下的适配 */
+.unified-panel-size .data-table {
+  width: 100%;
+  table-layout: fixed;
+}
+
+.unified-panel-size .data-table th,
+.unified-panel-size .data-table td {
+  word-wrap: break-word;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding: 6px 4px; /* 稍微减少padding以适应固定宽度 */
+}
+
+/* 按钮在统一尺寸下的适配 */
+.unified-panel-size button {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* 时间控制面板特殊适配 */
+.unified-panel-size .control-group select,
+.unified-panel-size .control-group input[type="text"] {
+  font-size: 12px; /* 稍微减小字体以适应固定宽度 */
+}
+
+/* 地面站面板表格特殊适配 */
+.unified-panel-size .data-table th {
+  font-size: 10px; /* 减小表头字体 */
+}
+
+.unified-panel-size .data-table td {
+  font-size: 11px; /* 减小表格内容字体 */
+}
+
+/* 语言切换时的面板尺寸锁定 */
+.unified-panel-size {
+  box-sizing: border-box;
+  overflow: hidden; /* 防止内容溢出影响尺寸 */
+}
+
+/* 面板标题的长度控制 */
+.unified-panel-size .panel-header {
+  height: 60px; /* 固定标题区域高度 */
+  box-sizing: border-box;
+}
+
+/* 控制组的统一间距 */
+.unified-panel-size .control-group {
+  margin-bottom: 10px; /* 统一间距 */
+}
+
+.unified-panel-size .control-group:last-child {
+  margin-bottom: 0;
+}
+
+/* 文本长度控制 - 防止不同语言造成尺寸变化 */
+.unified-panel-size label {
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 6px;
+}
+
+/* 选择框和输入框的统一样式 */
+.unified-panel-size select,
+.unified-panel-size input[type="text"],
+.unified-panel-size input[type="datetime-local"] {
+  height: 32px; /* 固定高度 */
+  box-sizing: border-box;
+}
+
+/* 按钮的统一高度 */
+.unified-panel-size button {
+  height: 36px; /* 固定按钮高度 */
+  box-sizing: border-box;
+}
+
+/* 时间控制面板的特殊处理 */
+.unified-panel-size .control-group[style*="background"] {
+  min-height: 60px; /* 确保折叠标题栏的最小高度 */
+}
+
+/* 确保表格不会因为内容长度变化而影响面板尺寸 */
+.unified-panel-size .data-table {
+  table-layout: fixed;
+  width: 100%;
+}
+
+.unified-panel-size .data-table th:first-child,
+.unified-panel-size .data-table td:first-child {
+  width: 40%; /* 参数列固定宽度 */
+}
+
+.unified-panel-size .data-table th:nth-child(2),
+.unified-panel-size .data-table td:nth-child(2) {
+  width: 35%; /* 数值列固定宽度 */
+}
+
+.unified-panel-size .data-table th:last-child,
+.unified-panel-size .data-table td:last-child {
+  width: 25%; /* 状态列固定宽度 */
+}
+
+/* 卫星模型大预览弹窗的完美居中 */
+.satellite-model-large-preview {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  z-index: 10000 !important;
+}
+
+.satellite-model-large-preview::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 1px;
+  height: 1px;
+  pointer-events: none;
+}
+
+/* 确保弹窗内容居中 */
+.satellite-model-dialog {
+  position: relative !important;
+  margin: auto !important;
+  max-width: calc(100vw - 40px) !important;
+  max-height: calc(100vh - 40px) !important;
+}
+
+/* 防止页面滚动时弹窗位置偏移 */
+body.modal-open {
+  overflow: hidden;
+  position: fixed;
+  width: 100%;
+  height: 100%;
 } 

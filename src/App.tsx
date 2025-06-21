@@ -2,13 +2,15 @@ import React, { Suspense } from 'react'
 import { Canvas } from '@react-three/fiber'
 import { OrbitControls, Stars } from '@react-three/drei'
 import { useAppStore } from './store/appStore'
+import { LanguageProvider } from './i18n/useTranslation'
 import SatelliteScene from './components/SatelliteScene'
 import ControlPanel from './components/ControlPanel'
 import SatelliteInfoPanel from './components/SatelliteInfoPanel'
 import GroundStationPanel from './components/GroundStationPanel'
 import DraggablePanel from './components/DraggablePanel'
+import LanguageToggle from './components/LanguageToggle'
 
-function App() {
+function AppContent() {
   const { setSelectedSatellite } = useAppStore()
 
   // 处理点击空白区域取消选中
@@ -72,28 +74,39 @@ function App() {
       {/* UI Panels - 可拖拽版本 */}
       <div onClick={(e) => e.stopPropagation()}>
         <DraggablePanel
-          title="时间与显示控制"
+          titleKey="timeAndDisplayControl"
           defaultPosition={{ x: 20, y: 20 }}
         >
           <ControlPanel />
         </DraggablePanel>
 
         <DraggablePanel
-          title="卫星信息"
-          defaultPosition={{ x: typeof window !== 'undefined' ? window.innerWidth - 320 : 1000, y: 20 }}
+          titleKey="satelliteInfo"
+          defaultPosition={{ x: typeof window !== 'undefined' ? window.innerWidth - 350 : 1000, y: 20 }}
           className="satellite-info-panel-wrapper"
         >
           <SatelliteInfoPanel />
         </DraggablePanel>
 
         <DraggablePanel
-          title="地面站TT&C控制"
-          defaultPosition={{ x: 20, y: typeof window !== 'undefined' ? window.innerHeight - 20 - 200 : 600 }}
+          titleKey="groundStationControl"
+          defaultPosition={{ x: 20, y: typeof window !== 'undefined' ? window.innerHeight - 20 - 300 : 500 }}
         >
           <GroundStationPanel />
         </DraggablePanel>
       </div>
+
+      {/* 语言切换按钮 */}
+      <LanguageToggle />
     </div>
+  )
+}
+
+function App() {
+  return (
+    <LanguageProvider>
+      <AppContent />
+    </LanguageProvider>
   )
 }
 

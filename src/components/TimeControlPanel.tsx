@@ -1,15 +1,19 @@
 import React, { useState, useEffect } from 'react'
 import { useAppStore } from '../store/appStore'
+import { useTranslation } from '../i18n/useTranslation'
 
 const TimeControlPanel: React.FC = () => {
+  const { t, language } = useTranslation()
   const { 
     timeSpeed, 
     setTimeSpeed, 
+    currentTime,
     isTimeCustom,
     isPaused,
     setCurrentTime,
     pauseTime,
     resumeTime,
+    reverseTime,
     resetToRealTime,
     getCurrentEffectiveTime
   } = useAppStore()
@@ -34,10 +38,10 @@ const TimeControlPanel: React.FC = () => {
         setCurrentTime(newTime)
         setCustomTimeInput('')
       } else {
-        alert('请输入有效的时间格式')
+        alert(t.invalidTimeFormat)
       }
     } catch (error) {
-      alert('时间格式错误')
+      alert(t.timeFormatError)
     }
   }
 
@@ -48,17 +52,40 @@ const TimeControlPanel: React.FC = () => {
 
   // 获取时间状态显示文本
   const getTimeStatusText = () => {
-    if (isPaused) return '暂停'
-    if (timeSpeed < 0) return `${Math.abs(timeSpeed)}x 倒退`
-    if (timeSpeed > 0) return `${timeSpeed}x 前进`
-    return '暂停'
+    if (isPaused) return t.paused
+    if (timeSpeed < 0) return `${Math.abs(timeSpeed)}x ${t.reversing}`
+    if (timeSpeed > 0) return `${timeSpeed}x ${t.forwarding}`
+    return t.paused
   }
+
+  // 播放器形状的SVG图标组件
+  const PlayIcon = () => (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M8 5v14l11-7z"/>
+    </svg>
+  )
+
+  const PauseIcon = () => (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>
+    </svg>
+  )
+
+  const ReverseIcon = () => (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M16 5v14L5 12z"/>
+    </svg>
+  )
 
   const ResetIcon = () => (
     <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
       <path d="M12 6v3l4-4-4-4v3c-4.42 0-8 3.58-8 8 0 1.57.46 3.03 1.24 4.26L6.7 14.8c-.45-.83-.7-1.79-.7-2.8 0-3.31 2.69-6 6-6zm6.76 1.74L17.3 9.2c.44.84.7 1.79.7 2.8 0 3.31-2.69 6-6 6v-3l-4 4 4 4v-3c4.42 0 8-3.58 8-8 0-1.57-.46-3.03-1.24-4.26z"/>
     </svg>
   )
+
+  // 用于避免 TypeScript 警告的工具函数
+  const _unused = { currentTime, PlayIcon, PauseIcon, ReverseIcon, reverseTime }
+  console.debug('TimeControlPanel variables:', _unused) // 开发环境下的调试信息
 
   return (
     <div className="control-group">
@@ -89,7 +116,7 @@ const TimeControlPanel: React.FC = () => {
       >
         <div>
           <label style={{ cursor: 'pointer', fontWeight: '500', color: '#e2e8f0' }}>
-            时间控制 · {getTimeStatusText()}
+            {t.timeControl} · {getTimeStatusText()}
           </label>
           <div style={{ 
             fontSize: '11px', 
@@ -122,7 +149,7 @@ const TimeControlPanel: React.FC = () => {
           {/* 时间速度控制和播放按钮 */}
           <div style={{ marginBottom: '16px' }}>
             <label style={{ display: 'block', marginBottom: '12px', fontSize: '13px', color: '#94a3b8', fontWeight: '500' }}>
-              时间速度: {isPaused ? '暂停' : `${timeSpeed.toFixed(1)}x`}
+              {t.timeSpeed}: {isPaused ? t.paused : `${timeSpeed.toFixed(1)}x`}
             </label>
             
             {/* 播放控制按钮 - 放在速度条上方 */}
@@ -281,7 +308,7 @@ const TimeControlPanel: React.FC = () => {
               }}
             />
             <small style={{ display: 'block', color: '#64748b', fontSize: '11px', textAlign: 'center' }}>
-              负值为倒退，正值为前进，0为暂停
+              {language === 'zh' ? '负值为倒退，正值为前进，0为暂停' : 'Negative: reverse, Positive: forward, 0: pause'}
             </small>
             
             {/* 重置按钮 - 移到底部 */}
@@ -313,14 +340,14 @@ const TimeControlPanel: React.FC = () => {
                 e.currentTarget.style.borderColor = 'rgba(59, 130, 246, 0.3)'
               }}
             >
-              <ResetIcon /> 重置到实时
+              <ResetIcon /> {t.resetToRealTime}
             </button>
           </div>
 
           {/* 当前时间显示 */}
           <div style={{ marginBottom: '16px' }}>
             <label style={{ display: 'block', marginBottom: '8px', fontSize: '13px', color: '#94a3b8', fontWeight: '500' }}>
-              {isTimeCustom ? '自定义时间 (GMT)' : '当前时间 (GMT)'}
+              {isTimeCustom ? `${t.customTime} (GMT)` : `${t.realTime} (GMT)`}
             </label>
             <div style={{ 
               fontSize: '13px', 
@@ -336,7 +363,7 @@ const TimeControlPanel: React.FC = () => {
             </div>
             {isTimeCustom && (
               <div style={{ fontSize: '11px', color: '#f59e0b', marginTop: '6px' }}>
-                自定义时间模式 - 时间按设定速度运行
+                {language === 'zh' ? '自定义时间模式 - 时间按设定速度运行' : 'Custom time mode - time runs at set speed'}
               </div>
             )}
           </div>
@@ -344,7 +371,7 @@ const TimeControlPanel: React.FC = () => {
           {/* 自定义时间输入 */}
           <div>
             <label style={{ display: 'block', marginBottom: '8px', fontSize: '13px', color: '#94a3b8', fontWeight: '500' }}>
-              设置自定义时间
+              {t.setTime}
             </label>
             <input
               type="datetime-local"
@@ -367,43 +394,29 @@ const TimeControlPanel: React.FC = () => {
               onBlur={(e) => {
                 e.target.style.borderColor = 'rgba(255,255,255,0.2)'
               }}
-              placeholder="设置自定义时间"
+              placeholder={t.enterCustomTime}
             />
             <button
               onClick={handleCustomTimeSubmit}
               disabled={!customTimeInput}
               style={{
                 width: '100%',
-                padding: '12px 16px',
-                fontSize: '13px',
-                fontWeight: '500',
+                padding: '8px 12px',
+                fontSize: '12px',
                 background: customTimeInput 
-                  ? 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)' 
-                  : 'rgba(100, 116, 139, 0.15)',
-                color: customTimeInput ? '#ffffff' : '#64748b',
-                border: 'none',
-                borderRadius: '12px',
+                  ? 'rgba(34, 197, 94, 0.15)' 
+                  : 'rgba(255,255,255,0.05)',
+                color: customTimeInput ? '#22c55e' : '#6b7280',
+                border: customTimeInput 
+                  ? '1px solid rgba(34, 197, 94, 0.3)' 
+                  : '1px solid rgba(255,255,255,0.1)',
+                borderRadius: '6px',
                 cursor: customTimeInput ? 'pointer' : 'not-allowed',
                 transition: 'all 0.3s ease',
-                boxShadow: customTimeInput 
-                  ? '0 4px 12px rgba(34, 197, 94, 0.3)' 
-                  : '0 2px 8px rgba(0, 0, 0, 0.1)',
-                backdropFilter: 'blur(10px)'
-              }}
-              onMouseEnter={(e) => {
-                if (customTimeInput) {
-                  e.currentTarget.style.transform = 'translateY(-1px)'
-                  e.currentTarget.style.boxShadow = '0 6px 16px rgba(34, 197, 94, 0.4)'
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (customTimeInput) {
-                  e.currentTarget.style.transform = 'translateY(0)'
-                  e.currentTarget.style.boxShadow = '0 4px 12px rgba(34, 197, 94, 0.3)'
-                }
+                fontWeight: '500'
               }}
             >
-              设置时间
+              {t.setTime}
             </button>
           </div>
         </div>

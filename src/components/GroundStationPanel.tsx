@@ -1,26 +1,28 @@
 import React, { useState } from 'react'
 import { useAppStore } from '../store/appStore'
+import { useTranslation } from '../i18n/useTranslation'
 
 const GroundStationPanel: React.FC = () => {
+  const { t } = useTranslation()
   const { selectedGroundStation, setSelectedGroundStation } = useAppStore()
   const [command, setCommand] = useState('')
   
   const groundStations = [
-    { id: 'singapore', name: 'Singapore Ground Station', status: 'active', lat: 1.3521, lng: 103.8198 },
-    { id: 'kennedy', name: 'Kennedy Space Center', status: 'active', lat: 28.5721, lng: -80.6041 },
-    { id: 'beijing', name: 'Beijing Aerospace Control', status: 'active', lat: 39.9042, lng: 116.4074 },
+    { id: 'singapore', name: t.singaporeStation, status: 'active', lat: 1.3521, lng: 103.8198 },
+    { id: 'kennedy', name: t.kennedyStation, status: 'active', lat: 28.5721, lng: -80.6041 },
+    { id: 'beijing', name: t.beijingStation, status: 'active', lat: 39.9042, lng: 116.4074 },
   ]
 
   const telemetryData = [
-    { parameter: '电源电压', value: '28.4V', status: '正常' },
-    { parameter: '温度', value: '23.5°C', status: '正常' },
-    { parameter: '信号强度', value: '-85dBm', status: '良好' },
-    { parameter: '数据传输率', value: '2.048 Mbps', status: '正常' }
+    { parameter: t.powerVoltage, value: '28.4V', status: t.normal },
+    { parameter: t.temperature, value: '23.5°C', status: t.normal },
+    { parameter: t.signalStrength, value: '-85dBm', status: t.good },
+    { parameter: t.dataRate, value: '2.048 Mbps', status: t.normal }
   ]
 
   const handleSendCommand = () => {
     if (command.trim() && selectedGroundStation) {
-      alert(`指令已发送至卫星:\n${command}`)
+      alert(`${t.commandSent}:\n${command}`)
       setCommand('')
     }
   }
@@ -30,14 +32,14 @@ const GroundStationPanel: React.FC = () => {
   return (
     <>
       <div className="control-group">
-        <label>选择地面站</label>
+        <label>{t.selectGroundStation}</label>
         <select 
           value={selectedGroundStation || ''}
           onChange={(e) => {
             setSelectedGroundStation(e.target.value)
           }}
         >
-          <option value="">请选择地面站</option>
+          <option value="">{t.pleaseSelectGroundStation}</option>
           {groundStations.map((station) => (
             <option key={station.id} value={station.id}>{station.name}</option>
           ))}
@@ -47,32 +49,32 @@ const GroundStationPanel: React.FC = () => {
       {selectedStationData && (
         <>
           <div className="control-group">
-            <label>地面站状态</label>
+            <label>{t.groundStationStatus}</label>
             <div style={{ display: 'flex', alignItems: 'center' }}>
               <span 
                 className={`status-indicator status-${
                   selectedStationData.status === 'active' ? 'online' : 'offline'
                 }`}
               />
-              {selectedStationData.status.toUpperCase()}
+              {selectedStationData.status === 'active' ? t.active.toUpperCase() : t.inactive.toUpperCase()}
             </div>
           </div>
 
           <div className="control-group">
-            <label>位置信息</label>
+            <label>{t.positionInfo}</label>
             <div style={{ fontSize: '12px' }}>
-              经度: {selectedStationData.lng.toFixed(4)}°<br/>
-              纬度: {selectedStationData.lat.toFixed(4)}°<br/>
-              海拔: 15m
+              {t.stationLongitude}: {selectedStationData.lng.toFixed(4)}{t.degrees}<br/>
+              {t.stationLatitude}: {selectedStationData.lat.toFixed(4)}{t.degrees}<br/>
+              {t.stationAltitude}: 15m
             </div>
           </div>
 
           <div className="control-group">
-            <label>下次过境</label>
+            <label>{t.nextPass}</label>
             <div style={{ fontSize: '12px' }}>
-              时间: {new Date(Date.now() + 2 * 60 * 60 * 1000).toLocaleString()}<br/>
-              持续时间: 10分钟<br/>
-              最大仰角: 45°
+              {t.passTime}: {new Date(Date.now() + 2 * 60 * 60 * 1000).toLocaleString()}<br/>
+              {t.duration}: 10{t.minutes}<br/>
+              {t.maxElevation}: 45{t.degrees}
             </div>
           </div>
         </>
@@ -81,13 +83,13 @@ const GroundStationPanel: React.FC = () => {
       {selectedGroundStation && (
         <>
           <div className="control-group">
-            <label>遥测数据</label>
+            <label>{t.telemetryData}</label>
             <table className="data-table">
               <thead>
                 <tr>
-                  <th>参数</th>
-                  <th>数值</th>
-                  <th>状态</th>
+                  <th>{t.parameter}</th>
+                  <th>{t.value}</th>
+                  <th>{t.status}</th>
                 </tr>
               </thead>
               <tbody>
@@ -96,8 +98,8 @@ const GroundStationPanel: React.FC = () => {
                     <td>{data.parameter}</td>
                     <td>{data.value}</td>
                     <td style={{ 
-                      color: data.status === '正常' ? '#00ff00' : 
-                             data.status === '良好' ? '#ffff00' : '#ff0000'
+                      color: data.status === t.normal ? '#00ff00' : 
+                             data.status === t.good ? '#ffff00' : '#ff0000'
                     }}>
                       {data.status}
                     </td>
@@ -108,10 +110,10 @@ const GroundStationPanel: React.FC = () => {
           </div>
 
           <div className="control-group">
-            <label>指令发送</label>
+            <label>{t.commandSend}</label>
             <input
               type="text"
-              placeholder="输入指令..."
+              placeholder={t.enterCommand}
               value={command}
               onChange={(e) => setCommand(e.target.value)}
               onKeyPress={(e) => e.key === 'Enter' && handleSendCommand()}
@@ -121,7 +123,7 @@ const GroundStationPanel: React.FC = () => {
               style={{ marginTop: '8px' }}
               disabled={!command.trim()}
             >
-              发送指令
+              {t.sendCommand}
             </button>
           </div>
         </>
@@ -129,7 +131,7 @@ const GroundStationPanel: React.FC = () => {
 
       {!selectedGroundStation && (
         <div style={{ color: '#888', fontSize: '12px', marginTop: '20px' }}>
-          请选择地面站以启用TT&C功能
+          {t.selectToEnable}
         </div>
       )}
     </>
