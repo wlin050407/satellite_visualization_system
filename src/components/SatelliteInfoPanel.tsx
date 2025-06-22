@@ -10,22 +10,29 @@ import * as THREE from 'three'
 
 const SatelliteInfoPanel: React.FC = () => {
   const { t } = useTranslation()
-  const { selectedSatellite, setSelectedSatellite, timeSpeed, getCurrentEffectiveTime } = useAppStore()
+  const { selectedSatellite, setSelectedSatellite, timeSpeed, getCurrentEffectiveTime, showLabels, setShowLabels } = useAppStore()
   const [realPosition, setRealPosition] = useState<SatellitePosition | null>(null)
   const [orbitalElements, setOrbitalElements] = useState<any>(null)
   const [showLargePreview, setShowLargePreview] = useState(false)
   const [isHovering, setIsHovering] = useState(false)
+  
+  // 记录弹窗打开前的标签显示状态
+  const [previousLabelsState, setPreviousLabelsState] = useState<boolean>(true)
 
-  // 处理大预览弹窗的显示/隐藏，防止页面滚动
+  // 处理大预览弹窗的显示/隐藏，防止页面滚动，并自动控制标签显示
   const handleShowLargePreview = (show: boolean) => {
-    setShowLargePreview(show)
-    
-    // 防止弹窗打开时页面滚动
     if (show) {
+      // 弹窗打开时：记录当前标签状态并关闭标签
+      setPreviousLabelsState(showLabels)
+      setShowLabels(false)
       document.body.classList.add('modal-open')
     } else {
+      // 弹窗关闭时：恢复之前的标签状态
+      setShowLabels(previousLabelsState)
       document.body.classList.remove('modal-open')
     }
+    
+    setShowLargePreview(show)
   }
 
   // 组件卸载时清理body类名

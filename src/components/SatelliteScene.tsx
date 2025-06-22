@@ -8,8 +8,8 @@ import * as THREE from 'three'
 import * as satellite from 'satellite.js'
 
 // NASA地球组件 - 地球本身不自转，通过场景旋转来模拟
-const NASAEarth: React.FC<{ timeSpeed: number }> = ({ timeSpeed }) => {
-  const earthRef = useRef<THREE.Mesh>(null)
+const NASAEarth: React.FC<{ timeSpeed: number; earthRef: React.RefObject<THREE.Group> }> = ({ timeSpeed, earthRef }) => {
+  const earthMeshRef = useRef<THREE.Mesh>(null)
   const cloudsRef = useRef<THREE.Mesh>(null)
 
   // 使用可靠的地球纹理
@@ -45,9 +45,9 @@ const NASAEarth: React.FC<{ timeSpeed: number }> = ({ timeSpeed }) => {
   })
 
   return (
-    <group>
+    <group ref={earthRef}>
       {/* 地球主体 - 修复纹理朝向 */}
-      <mesh ref={earthRef} rotation={[0, Math.PI, 0]}>
+      <mesh ref={earthMeshRef} rotation={[0, Math.PI, 0]}>
         <sphereGeometry args={[5, 64, 64]} />
         <primitive object={earthMaterial} />
       </mesh>
@@ -72,13 +72,74 @@ const NASAEarth: React.FC<{ timeSpeed: number }> = ({ timeSpeed }) => {
   )
 }
 
-// 自定义Billboard文字组件 - 确保文字始终正确朝向
+// 智能遮挡检测的Billboard文字组件
 const BillboardText: React.FC<{
   position: [number, number, number]
   fontSize: number
   color: string
   children: React.ReactNode
-}> = ({ position, fontSize, color, children }) => {
+  satelliteId: string
+  satelliteRef: React.RefObject<THREE.Group> // 传入卫星的引用
+}> = ({ position, fontSize, color, children, satelliteId, satelliteRef }) => {
+  const [isOccluded, setIsOccluded] = useState(false)
+  const { camera } = useThree()
+
+  // 检查是否被地球遮挡
+  const checkEarthOcclusion = (satelliteWorldPos: THREE.Vector3) => {
+    const earthCenter = new THREE.Vector3(0, 0, 0)
+    const earthRadius = 5.2 // 地球半径 + 一点缓冲
+    
+    // 计算从相机到卫星的方向
+    const cameraPos = camera.position.clone()
+    const satelliteDirection = satelliteWorldPos.clone().sub(cameraPos).normalize()
+    
+    // 计算相机到地球中心的向量
+    const cameraToEarth = earthCenter.clone().sub(cameraPos)
+    
+    // 计算射线在地球中心方向上的投影长度
+    const projectionLength = cameraToEarth.dot(satelliteDirection)
+    
+    // 如果投影长度小于等于0，说明地球在相机后面，不可能遮挡
+    if (projectionLength <= 0) return false
+    
+    // 计算射线上距离地球中心最近的点
+    const closestPointOnRay = cameraPos.clone().add(satelliteDirection.clone().multiplyScalar(projectionLength))
+    const distanceToEarthCenter = closestPointOnRay.distanceTo(earthCenter)
+    
+    // 检查射线是否与地球球体相交
+    const rayIntersectsEarth = distanceToEarthCenter <= earthRadius
+    
+    if (!rayIntersectsEarth) return false
+    
+    // 计算相交点到相机的距离
+    const distanceFromCenterToRay = distanceToEarthCenter
+    const intersectionDistance = projectionLength - Math.sqrt(earthRadius * earthRadius - distanceFromCenterToRay * distanceFromCenterToRay)
+    
+    // 计算卫星到相机的距离
+    const satelliteDistance = cameraPos.distanceTo(satelliteWorldPos)
+    
+    // 如果相交点比卫星更近，说明卫星被地球遮挡
+    return intersectionDistance < satelliteDistance && intersectionDistance > 0
+  }
+
+  // 实时遮挡检测
+  useFrame(() => {
+    if (satelliteRef.current) {
+      // 获取卫星的世界坐标
+      const worldPos = new THREE.Vector3()
+      satelliteRef.current.getWorldPosition(worldPos)
+      
+      // 检查遮挡
+      const occluded = checkEarthOcclusion(worldPos)
+      setIsOccluded(occluded)
+      
+      // 调试信息（每5秒打印一次）
+      if (Math.floor(Date.now() / 5000) % 2 === 0 && Math.floor(Date.now() / 100) % 50 === 0) {
+        console.log(`${satelliteId} 遮挡检测: 世界坐标=(${worldPos.x.toFixed(2)}, ${worldPos.y.toFixed(2)}, ${worldPos.z.toFixed(2)}), 被遮挡=${occluded}`)
+      }
+    }
+  })
+
   return (
     <Html
       position={position}
@@ -90,15 +151,21 @@ const BillboardText: React.FC<{
         color: color,
         fontSize: `${Math.max(12, fontSize * 40)}px`,
         fontWeight: 'bold',
-        textShadow: '1px 1px 3px rgba(0,0,0,0.9)',
+        textShadow: '2px 2px 4px rgba(0,0,0,0.8)',
         pointerEvents: 'none',
         userSelect: 'none',
         whiteSpace: 'nowrap',
         fontFamily: 'Arial, sans-serif',
-        transition: 'none',
+        transition: 'opacity 0.3s ease-in-out',
         backfaceVisibility: 'hidden',
         WebkitBackfaceVisibility: 'hidden',
-        minWidth: 'max-content'
+        minWidth: 'max-content',
+        background: 'transparent',
+        border: 'none',
+        outline: 'none',
+        boxShadow: 'none',
+        opacity: isOccluded ? 0.1 : 1, // 被遮挡时几乎透明，但保留一点可见度用于调试
+        position: 'relative'
       }}
     >
       {children}
@@ -627,6 +694,8 @@ const Satellite: React.FC<{
             position={[0, 1.0, 0]}
             fontSize={isSelected ? 0.20 : 0.18}
             color={isSelected ? '#ffffff' : color}
+            satelliteId={id}
+            satelliteRef={meshRef}
           >
             {name} {useRealOrbit ? '(TLE)' : '(SIM)'} {positionInfo}
           </BillboardText>
@@ -727,79 +796,60 @@ const SatelliteScene: React.FC = () => {
       id: 'sentinel', 
       name: 'Sentinel', 
       orbitRadius: 9.8, 
-      orbitInclination: 98.6, 
-      color: '#6c5ce7', 
-      speed: 0.93, // 稍慢 (100分钟)
-      initialAngle: Math.PI * 0.75,
-      modelType: 'sentinel' as const, // 使用Sentinel模型作为观测卫星
-      noradId: SATELLITE_IDS.SENTINEL
+      orbitInclination: 98.2, 
+      color: '#e74c3c', 
+      speed: 0.88, // 极地轨道，稍慢 (100分钟)
+      initialAngle: Math.PI * 1.8,
+      modelType: 'sentinel' as const,
+      noradId: SATELLITE_IDS.SENTINEL // 38755
     }
   ]
 
-  // 地球系统旋转（模拟地球自转）
+  // 地球旋转控制 - 根据跟随地球自转设置
   useFrame((state, delta) => {
     if (earthSystemRef.current) {
-      // 地球系统始终自转，速度受timeSpeed控制
-      earthSystemRef.current.rotation.y += delta * 0.05 * timeSpeed
-    }
-    
-    if (sceneRef.current) {
-      if (followEarthRotation) {
-        // 地球固定视角：观察者跟随地球旋转
-        // 整个场景反向旋转，抵消地球自转效果
-        sceneRef.current.rotation.y -= delta * 0.05 * timeSpeed
+      if (!followEarthRotation) {
+        // 不跟随地球自转时，地球系统保持固定朝向
+        earthSystemRef.current.rotation.y = 0
+      } else {
+        // 跟随地球自转时，地球系统随时间慢速旋转
+        earthSystemRef.current.rotation.y += delta * 0.002 * timeSpeed // 很慢的自转速度
       }
-      // 惯性空间视角：观察者固定，可以看到地球自转
     }
   })
 
   return (
     <group ref={sceneRef}>
-      {/* 隐形背景平面 - 捕获点击事件以取消选中 */}
-      <mesh
-        position={[0, 0, 0]}
-        onClick={(event) => {
-          event.stopPropagation()
-          setSelectedSatellite(null)
-        }}
-      >
-        <sphereGeometry args={[200, 32, 32]} />
-        <meshBasicMaterial 
-          transparent 
-          opacity={0} 
-          side={THREE.BackSide}
-        />
-      </mesh>
+      {/* 地球系统（地球+卫星）- 可以选择是否跟随地球自转 */}
+      <group ref={earthSystemRef}>
+        {/* NASA地球 */}
+        <NASAEarth timeSpeed={timeSpeed} earthRef={earthSystemRef} />
 
-      {/* 惯性空间中的真实轨道卫星 - 不受地球自转影响 */}
-      {showOrbits && satellites.map((satellite) => (
-        <group key={`inertial-${satellite.id}`}>
+        {/* 简化轨道卫星系统 - 与地球在同一旋转系统中（备用） */}
+        {satellites.map((sat) => (
         <Satellite
-            key={satellite.id}
-            orbitRadius={satellite.orbitRadius}
-            orbitInclination={satellite.orbitInclination}
-            name={satellite.name}
-            color={satellite.color}
-            speed={satellite.speed}
-            id={satellite.id}
-            initialAngle={satellite.initialAngle}
-            modelType={satellite.modelType}
-            noradId={satellite.noradId}
+            key={sat.id}
+            orbitRadius={sat.orbitRadius}
+            orbitInclination={sat.orbitInclination}
+            name={sat.name}
+            color={sat.color}
+            speed={sat.speed}
+            id={sat.id}
+            initialAngle={sat.initialAngle}
+            modelType={sat.modelType}
+            noradId={sat.noradId}
             timeSpeed={timeSpeed}
             showLabels={showLabels}
             useRealScale={useRealScale}
             getCurrentEffectiveTime={getCurrentEffectiveTime}
           />
-        </group>
-      ))}
-
-      <group ref={earthSystemRef}>
-        {/* NASA地球 */}
-        <NASAEarth timeSpeed={timeSpeed} />
-
-        {/* 简化轨道卫星系统 - 与地球在同一旋转系统中（备用） */}
-        {/* 当TLE数据不可用时，这些卫星会跟随地球旋转 */}
+        ))}
       </group>
+
+      {/* 轨道参考线（如果需要） */}
+      {showOrbits && satellites.map((sat) => (
+        <primitive key={`orbit-${sat.id}`} object={new THREE.RingGeometry(sat.orbitRadius - 0.1, sat.orbitRadius + 0.1, 64)} />
+      ))}
     </group>
   )
 }
