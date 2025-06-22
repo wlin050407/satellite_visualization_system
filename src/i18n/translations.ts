@@ -175,6 +175,14 @@ export interface Translations {
   meanMotion: string
   orbitPeriod: string
   calculating: string
+  
+  // 卫星描述
+  lowEarthOrbitStation: string
+  astronomicalObservationSatellite: string
+  communicationSatelliteConstellation: string
+  globalPositioningSystem: string
+  chineseSpaceStation: string
+  earthObservationSatellite: string
 }
 
 export const translations: Record<'zh' | 'en', Translations> = {
@@ -354,7 +362,15 @@ export const translations: Record<'zh' | 'en', Translations> = {
     positionVelocity: '速度',
     meanMotion: '平均运动',
     orbitPeriod: '轨道周期',
-    calculating: '计算中'
+    calculating: '计算中',
+    
+    // 卫星描述
+    lowEarthOrbitStation: '低地球轨道站',
+    astronomicalObservationSatellite: '天文观测卫星',
+    communicationSatelliteConstellation: '通信卫星星座',
+    globalPositioningSystem: '全球定位系统',
+    chineseSpaceStation: '中国空间站',
+    earthObservationSatellite: '地球观测卫星'
   },
   
   en: {
@@ -533,6 +549,14 @@ export const translations: Record<'zh' | 'en', Translations> = {
     positionVelocity: 'Velocity',
     meanMotion: 'Mean Motion',
     orbitPeriod: 'Orbit Period',
-    calculating: 'Calculating'
+    calculating: 'Calculating',
+    
+    // 卫星描述
+    lowEarthOrbitStation: 'Low Earth Orbit Station',
+    astronomicalObservationSatellite: 'Astronomical Observation Satellite',
+    communicationSatelliteConstellation: 'Communication Satellite Constellation',
+    globalPositioningSystem: 'Global Positioning System',
+    chineseSpaceStation: 'Chinese Space Station',
+    earthObservationSatellite: 'Earth Observation Satellite'
   }
 } 

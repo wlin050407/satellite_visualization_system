@@ -50,7 +50,7 @@ const SatelliteInfoPanel: React.FC = () => {
       altitude: 408, 
       inclination: 51.6,
       orbitRadius: 6.8,
-      description: '低地球轨道空间站',
+      description: t.lowEarthOrbitStation,
       modelType: 'iss' as const,
       color: '#ff6b6b',
       noradId: SATELLITE_IDS.ISS
@@ -62,7 +62,7 @@ const SatelliteInfoPanel: React.FC = () => {
       altitude: 547, 
       inclination: 28.5,
       orbitRadius: 8.5,
-      description: '天文观测卫星',
+      description: t.astronomicalObservationSatellite,
       modelType: 'hubble' as const,
       color: '#4ecdc4',
       noradId: SATELLITE_IDS.HUBBLE
@@ -74,7 +74,7 @@ const SatelliteInfoPanel: React.FC = () => {
       altitude: 550, 
       inclination: 53.0,
       orbitRadius: 8.8,
-      description: '通信卫星星座',
+      description: t.communicationSatelliteConstellation,
       modelType: 'starlink' as const,
       color: '#45b7d1',
       noradId: SATELLITE_IDS.STARLINK
@@ -86,7 +86,7 @@ const SatelliteInfoPanel: React.FC = () => {
       altitude: 20200, 
       inclination: 55.0,
       orbitRadius: 25,
-      description: '全球定位系统',
+      description: t.globalPositioningSystem,
       modelType: 'gps' as const,
       color: '#96ceb4',
       noradId: SATELLITE_IDS.GPS
@@ -98,7 +98,7 @@ const SatelliteInfoPanel: React.FC = () => {
       altitude: 340, 
       inclination: 41.5,
       orbitRadius: 6.4,
-      description: '中国空间站',
+      description: t.chineseSpaceStation,
       modelType: 'tiangong' as const,
       color: '#ffd93d',
       noradId: SATELLITE_IDS.TIANGONG
@@ -110,7 +110,7 @@ const SatelliteInfoPanel: React.FC = () => {
       altitude: 786, 
       inclination: 98.6,
       orbitRadius: 12.8,
-      description: '地球观测卫星',
+      description: t.earthObservationSatellite,
       modelType: 'sentinel' as const,
       color: '#6c5ce7',
       noradId: SATELLITE_IDS.SENTINEL
