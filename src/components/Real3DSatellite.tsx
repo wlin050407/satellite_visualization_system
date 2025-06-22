@@ -13,11 +13,26 @@ const isDevelopment = typeof window !== 'undefined' &&
    window.location.hostname.includes('192.168.') ||
    window.location.port !== '');
 
+// 获取正确的模型路径 - 根据环境动态设置
+const getModelPath = (modelFile: string) => {
+  let path;
+  if (isDevelopment) {
+    path = modelFile; // 开发环境直接使用相对路径
+  } else {
+    path = BASE_PATH + modelFile; // 生产环境使用带base路径的完整路径
+  }
+  
+  // 添加调试日志
+  console.log(`🔧 模型路径配置: ${modelFile} -> ${path} (开发环境: ${isDevelopment})`);
+  
+  return path;
+};
+
 // NASA官方3D模型路径 - 使用本地下载的真实模型
 const SATELLITE_MODELS = {
   // 使用真实的NASA GLB模型文件 - 只包含实际存在的模型
-  hubble: '/models/hubble.glb',          // 真实的NASA哈勃望远镜模型 (11MB)
-  cassini: '/models/cassini.glb',        // 真实的NASA卡西尼探测器模型 (5.6MB)
+  hubble: getModelPath('/models/hubble.glb'),          // 真实的NASA哈勃望远镜模型 (11MB)
+  cassini: getModelPath('/models/cassini.glb'),        // 真实的NASA卡西尼探测器模型 (5.6MB)
   
   // 其他模型使用简化几何模型
   // iss: 使用SimpleSatelliteModel
