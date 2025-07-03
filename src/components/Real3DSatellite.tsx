@@ -31,10 +31,10 @@ const getModelPath = (modelFile: string) => {
 // 模型文件大小配置 - 用于加载策略优化
 const MODEL_FILE_SIZES = {
   hubble: 11.5,      // MB - SMALL
-  starlink: 26.6,    // MB - MEDIUM  
-  iss: 44.5,         // MB - MEDIUM
-  gps: 50.9,         // MB - LARGE
-  tiangong: 140.5,   // MB - HUGE
+  starlink: 4.4,     // MB - SMALL (修正为实际文件大小)
+  iss: 34.4,         // MB - MEDIUM (修正为实际文件大小)
+  gps: 2.5,          // MB - SMALL (修正为实际文件大小)
+  tiangong: 10.0,    // MB - SMALL (Draco压缩后)
 }
 
 // 根据文件大小确定加载策略
@@ -81,10 +81,10 @@ const getLoadingStrategy = (modelType: string) => {
 const SATELLITE_MODELS = {
   // 使用真实的NASA GLB模型文件 - 包含所有可用模型
   hubble: getModelPath('/models/hubble.glb'),              // 真实的NASA哈勃望远镜模型 (11.5MB)
-  iss: getModelPath('/models/ISS_stationary.glb'),         // 真实的NASA国际空间站模型 (44.5MB)
-  starlink: getModelPath('/models/starlink.glb'),          // 真实的Starlink卫星模型 (26.6MB)
-  gps: getModelPath('/models/gps_satellite.glb'),          // 真实的GPS卫星模型 (50.9MB)
-  tiangong: getModelPath('/models/tiangong.glb'),          // 真实的天宫空间站模型 (140.5MB)
+  iss: getModelPath('/models/ISS_stationary.glb'),         // 真实的NASA国际空间站模型 (34.4MB)
+  starlink: getModelPath('/models/starlink.glb'),          // 真实的Starlink卫星模型 (4.4MB)
+  gps: getModelPath('/models/gps_satellite.glb'),          // 真实的GPS卫星模型 (2.5MB)
+  tiangong: getModelPath('/models/tiangong.glb'),          // 真实的天宫空间站模型 (10.0MB - Draco压缩)
   
   // 其他模型使用简化几何模型
   // cassini: 暂时移除，使用简化模型
@@ -522,6 +522,8 @@ const SimpleSatelliteModel: React.FC<{
           </group>
         )
         
+
+        
       default:
         return (
           <mesh>
@@ -671,11 +673,20 @@ const tiangongStrategy = getLoadingStrategy('tiangong')
 if (hubbleStrategy.preload) {
   useGLTF.preload(SATELLITE_MODELS.hubble);
 }
+if (gpsStrategy.preload) {
+  useGLTF.preload(SATELLITE_MODELS.gps);
+}
+if (starLinkStrategy.preload) {
+  useGLTF.preload(SATELLITE_MODELS.starlink);
+}
+if (tiangongStrategy.preload) {
+  useGLTF.preload(SATELLITE_MODELS.tiangong);
+}
 // 中等和大文件不预加载，按需加载
 console.log('模型加载策略:', {
   hubble: `${hubbleStrategy.category} - ${hubbleStrategy.loadingTime}`,
   starlink: `${starLinkStrategy.category} - ${starLinkStrategy.loadingTime}`,
   iss: `${issStrategy.category} - ${issStrategy.loadingTime}`,
   gps: `${gpsStrategy.category} - ${gpsStrategy.loadingTime}`,
-  tiangong: `${tiangongStrategy.category} - ${tiangongStrategy.loadingTime}${tiangongStrategy.requiresOptimization ? ' (需要优化)' : ''}`
+  tiangong: `${tiangongStrategy.category} - ${tiangongStrategy.loadingTime}`
 }); 
