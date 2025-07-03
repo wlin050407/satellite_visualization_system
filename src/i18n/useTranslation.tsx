@@ -16,13 +16,13 @@ interface LanguageProviderProps {
 }
 
 export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) => {
-  // 从localStorage读取保存的语言设置，默认为中文
+  // 从localStorage读取保存的语言设置，默认为英文
   const [language, setLanguageState] = useState<Language>(() => {
     try {
       const saved = localStorage.getItem('satellite-app-language')
-      return (saved as Language) || 'zh'
+      return (saved as Language) || 'en'
     } catch {
-      return 'zh'
+      return 'en'
     }
   })
 
