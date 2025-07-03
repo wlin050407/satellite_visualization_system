@@ -28,18 +28,67 @@ const getModelPath = (modelFile: string) => {
   return path;
 };
 
+// 模型文件大小配置 - 用于加载策略优化
+const MODEL_FILE_SIZES = {
+  hubble: 11.5,      // MB - SMALL
+  starlink: 26.6,    // MB - MEDIUM  
+  iss: 44.5,         // MB - MEDIUM
+  gps: 50.9,         // MB - LARGE
+  tiangong: 140.5,   // MB - HUGE
+}
+
+// 根据文件大小确定加载策略
+const getLoadingStrategy = (modelType: string) => {
+  const size = MODEL_FILE_SIZES[modelType as keyof typeof MODEL_FILE_SIZES] || 0
+  
+  if (size < 15) {
+    return { 
+      priority: 'high', 
+      preload: true, 
+      showProgress: false,
+      category: 'SMALL',
+      loadingTime: '< 2秒'
+    }
+  } else if (size < 30) {
+    return { 
+      priority: 'medium', 
+      preload: false, 
+      showProgress: true,
+      category: 'MEDIUM',
+      loadingTime: '2-5秒'
+    }
+  } else if (size < 60) {
+    return { 
+      priority: 'low', 
+      preload: false, 
+      showProgress: true,
+      category: 'LARGE',
+      loadingTime: '5-15秒'
+    }
+  } else {
+    return { 
+      priority: 'critical', 
+      preload: false, 
+      showProgress: true,
+      category: 'HUGE',
+      loadingTime: '15-30秒',
+      requiresOptimization: true
+    }
+  }
+}
+
 // NASA官方3D模型路径 - 使用本地下载的真实模型
 const SATELLITE_MODELS = {
-  // 使用真实的NASA GLB模型文件 - 只包含实际存在的模型
-  hubble: getModelPath('/models/hubble.glb'),          // 真实的NASA哈勃望远镜模型 (11MB)
-  cassini: getModelPath('/models/cassini.glb'),        // 真实的NASA卡西尼探测器模型 (5.6MB)
+  // 使用真实的NASA GLB模型文件 - 包含所有可用模型
+  hubble: getModelPath('/models/hubble.glb'),              // 真实的NASA哈勃望远镜模型 (11.5MB)
+  iss: getModelPath('/models/ISS_stationary.glb'),         // 真实的NASA国际空间站模型 (44.5MB)
+  starlink: getModelPath('/models/starlink.glb'),          // 真实的Starlink卫星模型 (26.6MB)
+  gps: getModelPath('/models/gps_satellite.glb'),          // 真实的GPS卫星模型 (50.9MB)
+  tiangong: getModelPath('/models/tiangong.glb'),          // 真实的天宫空间站模型 (140.5MB)
   
   // 其他模型使用简化几何模型
-  // iss: 使用SimpleSatelliteModel
-  // starlink: 使用SimpleSatelliteModel
-  // tiangong: 使用SimpleSatelliteModel
+  // cassini: 暂时移除，使用简化模型
   // sentinel: 使用SimpleSatelliteModel
-  // gps: 使用SimpleSatelliteModel
 }
 
 interface Real3DSatelliteProps {
@@ -130,6 +179,35 @@ const LoadedSatelliteModel: React.FC<{
           }
         })
         
+        // 为GPS和Starlink自动赋主色和高光
+        cloned.traverse((child) => {
+          if (child instanceof THREE.Mesh) {
+            if (instanceId.split('-')[0] === 'gps') {
+              // 主体默认银灰色
+              child.material = new THREE.MeshStandardMaterial({
+                color: '#b0b7bd',
+                metalness: 0.85,
+                roughness: 0.25,
+                emissive: '#222222',
+              });
+            } else if (instanceId.split('-')[0] === 'starlink') {
+              // 主体默认银白色
+              child.material = new THREE.MeshStandardMaterial({
+                color: '#dbe3ea',
+                metalness: 0.9,
+                roughness: 0.18,
+                emissive: '#222222',
+              });
+            }
+            // 太阳能板自动赋深蓝色/黑色
+            if (child.name && /solar|panel|wing/i.test(child.name)) {
+              child.material.color.set(instanceId.split('-')[0] === 'gps' ? '#1a237e' : '#222831');
+              child.material.metalness = 0.7;
+              child.material.roughness = 0.3;
+            }
+          }
+        });
+        
         setClonedScene(cloned)
         setIsLoading(false)
         console.log(`LoadedSatelliteModel[${instanceId}]: 模型克隆和优化完成`)
@@ -160,20 +238,50 @@ const LoadedSatelliteModel: React.FC<{
     )
   }
 
-  // 加载中状态
+  // 加载中状态 - 增强版，根据文件大小显示不同加载指示
   if (isLoading || !clonedScene) {
+    const strategy = getLoadingStrategy(instanceId.split('-')[0])
+    const fileSize = MODEL_FILE_SIZES[instanceId.split('-')[0] as keyof typeof MODEL_FILE_SIZES]
+    
     return (
       <group ref={groupRef} scale={[scale, scale, scale]}>
-        {/* 加载中的占位符 - 更明显的指示 */}
+        {/* 主加载指示器 - 根据文件大小类别显示不同颜色 */}
         <mesh>
           <boxGeometry args={[0.2, 0.2, 0.2]} />
-          <meshBasicMaterial color="#ffff00" />
+          <meshBasicMaterial color={color} />
         </mesh>
-        {/* 旋转的加载指示 */}
-        <mesh position={[0.3, 0, 0]}>
-          <sphereGeometry args={[0.05, 8, 8]} />
-          <meshBasicMaterial color="#00ff00" />
-        </mesh>
+        
+        {/* 旋转的加载指示 - 动画组件 */}
+        <LoadingSpinner category={strategy.category} />
+        
+        {/* 文件大小指示器 */}
+        {strategy.showProgress && fileSize && (
+          <>
+            {/* 进度条背景 */}
+            <mesh position={[0, -0.4, 0]}>
+              <boxGeometry args={[0.4, 0.02, 0.05]} />
+              <meshBasicMaterial color="#333333" />
+            </mesh>
+            
+            {/* 进度条（模拟） */}
+            <mesh position={[-0.1, -0.39, 0.01]}>
+              <boxGeometry args={[0.2, 0.015, 0.03]} />
+              <meshBasicMaterial color={
+                strategy.category === 'MEDIUM' ? "#ffaa00" :
+                strategy.category === 'LARGE' ? "#ff6600" :
+                "#ff3333"
+              } />
+            </mesh>
+            
+            {/* 大文件警告指示 */}
+            {strategy.requiresOptimization && (
+              <mesh position={[0, -0.6, 0]}>
+                <sphereGeometry args={[0.03, 6, 6]} />
+                <meshBasicMaterial color="#ff0000" />
+              </mesh>
+            )}
+          </>
+        )}
       </group>
     )
   }
@@ -465,6 +573,25 @@ class ModelErrorBoundary extends React.Component<
   }
 }
 
+// 加载动画组件
+const LoadingSpinner: React.FC<{ category: string }> = ({ category }) => {
+  const meshRef = useRef<THREE.Mesh>(null)
+  
+  useFrame((state) => {
+    if (meshRef.current) {
+      const speed = category === 'HUGE' ? 0.5 : 2
+      meshRef.current.rotation.y = state.clock.elapsedTime * speed
+    }
+  })
+  
+  return (
+    <mesh ref={meshRef} position={[0.3, 0, 0]}>
+      <sphereGeometry args={[0.05, 8, 8]} />
+      <meshBasicMaterial color="#ffffff" />
+    </mesh>
+  )
+}
+
 // 主组件
 const Real3DSatellite: React.FC<Real3DSatelliteProps> = ({ 
   modelType, 
@@ -483,8 +610,14 @@ const Real3DSatellite: React.FC<Real3DSatelliteProps> = ({
   let modelUrl: string | null = null
   if (modelType === 'hubble') {
     modelUrl = SATELLITE_MODELS.hubble
+  } else if (modelType === 'iss') {
+    modelUrl = SATELLITE_MODELS.iss
   } else if (modelType === 'starlink') {
-    modelUrl = SATELLITE_MODELS.cassini // Starlink使用Cassini模型作为替代
+    modelUrl = SATELLITE_MODELS.starlink
+  } else if (modelType === 'gps') {
+    modelUrl = SATELLITE_MODELS.gps
+  } else if (modelType === 'tiangong') {
+    modelUrl = SATELLITE_MODELS.tiangong
   }
   
   // 如果有真实3D模型，使用LoadedSatelliteModel
@@ -527,6 +660,22 @@ const Real3DSatellite: React.FC<Real3DSatelliteProps> = ({
 
 export default Real3DSatellite
 
-// 预加载NASA模型
-useGLTF.preload(SATELLITE_MODELS.hubble);
-useGLTF.preload(SATELLITE_MODELS.cassini); 
+// 智能预加载NASA模型 - 根据文件大小选择性预加载
+const hubbleStrategy = getLoadingStrategy('hubble')
+const starLinkStrategy = getLoadingStrategy('starlink')
+const issStrategy = getLoadingStrategy('iss')
+const gpsStrategy = getLoadingStrategy('gps')
+const tiangongStrategy = getLoadingStrategy('tiangong')
+
+// 只预加载小文件（<15MB），大文件按需加载以节省带宽和内存
+if (hubbleStrategy.preload) {
+  useGLTF.preload(SATELLITE_MODELS.hubble);
+}
+// 中等和大文件不预加载，按需加载
+console.log('模型加载策略:', {
+  hubble: `${hubbleStrategy.category} - ${hubbleStrategy.loadingTime}`,
+  starlink: `${starLinkStrategy.category} - ${starLinkStrategy.loadingTime}`,
+  iss: `${issStrategy.category} - ${issStrategy.loadingTime}`,
+  gps: `${gpsStrategy.category} - ${gpsStrategy.loadingTime}`,
+  tiangong: `${tiangongStrategy.category} - ${tiangongStrategy.loadingTime}${tiangongStrategy.requiresOptimization ? ' (需要优化)' : ''}`
+}); 

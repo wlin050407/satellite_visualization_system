@@ -1,6 +1,6 @@
 import React, { useRef, useMemo, Suspense, useState, useEffect } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
-import { Text, Html, Line } from '@react-three/drei'
+import { Html } from '@react-three/drei'
 import { useAppStore } from '../store/appStore'
 import { SATELLITE_IDS, tleService } from '../services/tleService'
 import Real3DSatellite from './Real3DSatellite'
@@ -193,20 +193,17 @@ const Satellite: React.FC<{
   const orbitRef = useRef<THREE.Group>(null)
   const selectedRingRef = useRef<THREE.Mesh>(null)
   const { selectedSatellite, setSelectedSatellite } = useAppStore()
-  
   // 累积时间系统 - 避免timeSpeed改变时的跳跃
   const accumulatedTimeRef = useRef(0)
   const lastFrameTimeRef = useRef(0)
   const lastTimeSpeedRef = useRef(timeSpeed)
+  // 运动状态指示器（只保留实际用到的positionInfo）
+  const [positionInfo, setPositionInfo] = useState('');
   
   // 真实轨道计算状态
   const [satrec, setSatrec] = useState<any>(null)
   const [realOrbitPath, setRealOrbitPath] = useState<THREE.Vector3[]>([])
   const [useRealOrbit, setUseRealOrbit] = useState(false)
-  
-  // 运动状态指示器
-  const [currentAngle, setCurrentAngle] = useState(0)
-  const [positionInfo, setPositionInfo] = useState('')
   
   // 检查当前卫星是否被选中
   const isSelected = selectedSatellite === id
@@ -415,13 +412,30 @@ const Satellite: React.FC<{
   }, [orbitRadius, useRealOrbit, realOrbitPath, name, useRealScale])
 
   // 创建高质量的真实卫星模型 - 使用NASA官方3D模型
-  const satelliteModel = useMemo(() => (
-    <Real3DSatellite 
-      modelType={modelType}
-      scale={0.03}
-      color={color}
-    />
-  ), [modelType, color])
+  const satelliteModel = useMemo(() => {
+    // 根据不同模型类型调整缩放比例 - 大幅缩小到合理比例
+    let modelScale = 0.008; // 大幅缩小默认缩放
+    
+    if (modelType === 'iss') {
+      modelScale = 0.003; // ISS大幅缩小
+    } else if (modelType === 'tiangong') {
+      modelScale = 0.04; // 天宫空间站大幅缩小
+    } else if (modelType === 'gps') {
+      modelScale = 0.00001; // GPS卫星缩小
+    } else if (modelType === 'starlink') {
+      modelScale = 0.008; // Starlink缩小
+    } else if (modelType === 'hubble') {
+      modelScale = 0.010; // Hubble稍小
+    }
+    
+    return (
+      <Real3DSatellite 
+        modelType={modelType}
+        scale={modelScale}
+        color={color}
+      />
+    );
+  }, [modelType, color])
 
   // 真实轨道运动计算
   useFrame((state, delta) => {
@@ -549,7 +563,6 @@ const Satellite: React.FC<{
         meshRef.current.lookAt(0, 0, 0)
         
         // 更新运动状态
-        setCurrentAngle(angle * 180 / Math.PI)
         setPositionInfo(`${(angle * 180 / Math.PI).toFixed(0)}°,R=${orbitRadius.toFixed(1)}`)
         
         // 简化模式的调试信息

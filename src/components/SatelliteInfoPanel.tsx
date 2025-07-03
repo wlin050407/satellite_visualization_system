@@ -163,6 +163,18 @@ const SatelliteInfoPanel: React.FC = () => {
     return { x: x.toFixed(2), y: y.toFixed(2), z: z.toFixed(2) }
   }
 
+  // 以ISS为基准，scale=0.035
+  const issScale = 0.003;
+  const baseScale = 0.035;
+  const sceneScales: Record<string, number> = {
+    iss: 0.003,
+    tiangong: 0.04,
+    gps: 0.00001,
+    starlink: 0.008,
+    hubble: 0.01,
+  };
+  const getPreviewScale = (modelType: string) => baseScale * (sceneScales[modelType] / issScale);
+
   return (
     <>
       <div className="satellite-info-content">
@@ -272,7 +284,7 @@ const SatelliteInfoPanel: React.FC = () => {
                   <Suspense fallback={null}>
                     <Real3DSatellite 
                       modelType={selectedSat.modelType} 
-                      scale={0.25}
+                      scale={getPreviewScale(selectedSat.modelType)}
                       color={selectedSat.color}
                     />
                   </Suspense>
@@ -547,7 +559,7 @@ const SatelliteInfoPanel: React.FC = () => {
                   <Suspense fallback={null}>
                     <Real3DSatellite 
                       modelType={selectedSat.modelType} 
-                      scale={0.8}
+                      scale={getPreviewScale(selectedSat.modelType)}
                       color={selectedSat.color}
                     />
                   </Suspense>
