@@ -381,4 +381,6 @@ const calculateRealOrbit = (noradId: number) => {
 
 ## 如果这个项目对您有帮助，请给个Star！
 
-**现在就体验真实的卫星轨道可视化吧！** 
+**现在就体验真实的卫星轨道可视化吧！**
+
+<!-- workflow trigger: update at $(date) --> 
