@@ -39,6 +39,7 @@ const NASAEarth: React.FC<{ timeSpeed: number; earthRef: React.RefObject<THREE.G
 
   // 云层独立旋转以产生动态效果
   useFrame((state, delta) => {
+    if (timeSpeed === 0) return; // 暂停时彻底冻结所有动画推进
     if (cloudsRef.current) {
       cloudsRef.current.rotation.y += delta * 0.03 * timeSpeed // 云层相对地球缓慢移动，速度受timeSpeed控制
     }
@@ -437,8 +438,21 @@ const Satellite: React.FC<{
     );
   }, [modelType, color])
 
+  // 轨道周期（秒）设定：ISS、天宫、Hubble、Starlink、Sentinel为各自轨道周期，GPS为12小时
+  let rotationPeriod = 5400; // 默认90分钟一圈
+  if (modelType === 'iss' || modelType === 'tiangong') {
+    rotationPeriod = 5580; // 93分钟一圈
+  } else if (modelType === 'hubble' || modelType === 'starlink') {
+    rotationPeriod = 5700; // 95分钟一圈
+  } else if (modelType === 'sentinel') {
+    rotationPeriod = 6000; // 100分钟一圈
+  } else if (modelType === 'gps') {
+    rotationPeriod = 43200; // 12小时一圈
+  }
+
   // 真实轨道运动计算
   useFrame((state, delta) => {
+    if (timeSpeed === 0) return; // 暂停时彻底冻结所有动画推进
     if (orbitRef.current && meshRef.current) {
       // 累积时间计算 - 平滑处理timeSpeed变化
       const currentFrameTime = state.clock.elapsedTime
@@ -460,7 +474,7 @@ const Satellite: React.FC<{
         // 使用实时TLE计算当前位置
         try {
           const now = getCurrentEffectiveTime()
-          const accelerationFactor = 60 // 基础加速倍数
+          const accelerationFactor = 1 // 基础加速倍数，改为1实现真实速度
           const acceleratedTime = new Date(now.getTime() + accumulatedTimeRef.current * 1000 * accelerationFactor)
           
           // 使用SGP4模型计算实时位置
@@ -522,7 +536,12 @@ const Satellite: React.FC<{
                 
                 // 设置卫星位置
                 meshRef.current.position.set(sceneX, sceneY, sceneZ)
-                meshRef.current.lookAt(0, 0, 0)
+                // meshRef.current.lookAt(0, 0, 0) // 移除每帧lookAt，避免疯狂自转
+                // 现实自转：按rotationPeriod平滑自转（与轨道相位同步）
+                if (timeSpeed !== 0) {
+                  const orbitPhase = (accumulatedTimeRef.current % rotationPeriod) / rotationPeriod;
+                  meshRef.current.rotation.y = orbitPhase * 2 * Math.PI;
+                }
                 
                 // 计算地理坐标用于显示（可选）
                 const gmst = satellite.gstime(acceleratedTime)
@@ -560,7 +579,7 @@ const Satellite: React.FC<{
         
         // 设置卫星在轨道坐标系中的位置
         meshRef.current.position.set(x, y, z)
-        meshRef.current.lookAt(0, 0, 0)
+        // meshRef.current.lookAt(0, 0, 0) // 移除每帧lookAt，避免疯狂自转
         
         // 更新运动状态
         setPositionInfo(`${(angle * 180 / Math.PI).toFixed(0)}°,R=${orbitRadius.toFixed(1)}`)
@@ -594,7 +613,7 @@ const Satellite: React.FC<{
     
     // 计算当前应该在轨道路径上的哪个点
     const orbitPeriod = 90 * 60 // 90分钟轨道周期（秒）
-    const accelerationFactor = 60 // 基础加速倍数
+    const accelerationFactor = 1 // 基础加速倍数，改为1实现真实速度
     const acceleratedTime = accumulatedTimeRef.current * accelerationFactor
     
     // 计算在轨道周期中的位置（0-1）
@@ -616,7 +635,7 @@ const Satellite: React.FC<{
       
       // 直接使用预计算的轨道点
       meshRef.current.position.copy(currentPoint)
-      meshRef.current.lookAt(0, 0, 0)
+      // meshRef.current.lookAt(0, 0, 0) // 移除每帧lookAt，避免疯狂自转
       
       // 计算显示用的地理坐标（近似）
       const distance = currentPoint.length()
@@ -820,6 +839,7 @@ const SatelliteScene: React.FC = () => {
 
   // 地球旋转控制 - 根据跟随地球自转设置
   useFrame((state, delta) => {
+    if (timeSpeed === 0) return; // 暂停时彻底冻结所有动画推进
     if (earthSystemRef.current) {
       if (!followEarthRotation) {
         // 不跟随地球自转时，地球系统保持固定朝向

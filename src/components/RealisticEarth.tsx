@@ -7,7 +7,7 @@ import { GOOGLE_3D_TILES_CONFIG, isGoogleMapsApiKeySet, getApiKeyInstructions } 
 import * as THREE from 'three'
 
 const RealisticEarth: React.FC = () => {
-  const tilesRef = useRef<TilesRenderer>()
+  const tilesRef = useRef<any>()
   const groupRef = useRef<THREE.Group>(null)
   const { scene, camera, gl } = useThree()
   const { groundStations, selectedGroundStation, setSelectedGroundStation } = useSatelliteStore()

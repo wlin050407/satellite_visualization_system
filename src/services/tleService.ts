@@ -30,7 +30,7 @@ export interface SatellitePosition {
 
 // TLE API配置
 const TLE_API_BASE = 'https://api.n2yo.com/rest/v1/satellite'
-const API_KEY = 'DEMO_KEY' // 用户需要注册获取真实API密钥
+const API_KEY = '2ZS9GT-7X3WT2-HRRQFG-5IS3' // 真实API密钥
 
 class TLEService {
   private tleCache: Map<number, { tle: string, timestamp: number }> = new Map()

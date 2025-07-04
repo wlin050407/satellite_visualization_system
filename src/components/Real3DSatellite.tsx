@@ -106,13 +106,6 @@ const TestHubbleModel: React.FC<{ scale: number }> = ({ scale }) => {
   const { scene } = useGLTF(SATELLITE_MODELS.hubble)
   console.log(`TestHubbleModel: 哈勃模型加载成功`)
   
-  // 自动旋转
-  useFrame((state, delta) => {
-    if (groupRef.current) {
-      groupRef.current.rotation.y += delta * 0.5
-    }
-  })
-
   return (
     <group ref={groupRef} scale={[scale, scale, scale]}>
       {/* 调试用红色方块 */}
@@ -219,13 +212,6 @@ const LoadedSatelliteModel: React.FC<{
     }
   }, [scene, instanceId, color])
 
-  // 自动旋转
-  useFrame((state, delta) => {
-    if (groupRef.current) {
-      groupRef.current.rotation.y += delta * 0.5
-    }
-  })
-
   // 如果有加载错误，显示错误信息并降级到简化模型
   if (loadingError) {
     console.warn(`LoadedSatelliteModel[${instanceId}]: 降级到简化模型，原因: ${loadingError}`)
@@ -300,13 +286,6 @@ const SimpleSatelliteModel: React.FC<{
   color: string
 }> = ({ modelType, scale, color }) => {
   const groupRef = useRef<THREE.Group>(null)
-
-  // 自动旋转
-  useFrame((state, delta) => {
-    if (groupRef.current) {
-      groupRef.current.rotation.y += delta * 0.5
-    }
-  })
 
   // 创建简化模型
   const createSimpleModel = () => {

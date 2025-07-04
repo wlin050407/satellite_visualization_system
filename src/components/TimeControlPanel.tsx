@@ -163,7 +163,7 @@ const TimeControlPanel: React.FC = () => {
             }}>
               {/* 倒退按钮 - 双左箭头 */}
               <button 
-                onClick={() => setTimeSpeed(timeSpeed <= 0 ? Math.max(timeSpeed - 0.5, -5) : -1)}
+                onClick={() => setTimeSpeed(timeSpeed <= 0 ? Math.max(timeSpeed - 0.5, -20) : -1)}
                 style={{ 
                   width: '40px',
                   height: '40px',
@@ -245,7 +245,7 @@ const TimeControlPanel: React.FC = () => {
 
               {/* 快进按钮 - 双右箭头 */}
               <button 
-                onClick={() => setTimeSpeed(timeSpeed >= 0 ? Math.min(timeSpeed + 0.5, 5) : 1)}
+                onClick={() => setTimeSpeed(timeSpeed >= 0 ? Math.min(timeSpeed + 0.5, 20) : 1)}
                 style={{ 
                   width: '40px',
                   height: '40px',
@@ -291,8 +291,8 @@ const TimeControlPanel: React.FC = () => {
             {/* 速度滑块 */}
             <input
               type="range"
-              min="-5.0"
-              max="5.0"
+              min="-20.0"
+              max="20.0"
               step="0.1"
               value={timeSpeed}
               onChange={(e) => setTimeSpeed(parseFloat(e.target.value))}
