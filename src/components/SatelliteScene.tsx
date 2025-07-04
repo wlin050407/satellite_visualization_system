@@ -594,15 +594,15 @@ const Satellite: React.FC<{
                     
                     // 根据卫星类型添加特定的姿态调整
                     if (name.includes('Hubble')) {
-                      // 望远镜：保持观测姿态，避免过度旋转
-                      meshRef.current.rotateY(Math.PI / 4) // 轻微调整观测角度
+                      meshRef.current.rotateY(Math.PI / 4)
                     } else if (name.includes('GPS')) {
-                      // GPS卫星：保持天线朝向地球
-                      meshRef.current.rotateX(-Math.PI / 6) // 天线略微向下
+                      meshRef.current.rotateX(-Math.PI / 6)
                     } else if (name.includes('Starlink')) {
-                      // Starlink：保持通信天线朝向
-                      meshRef.current.rotateZ(Math.PI / 3) // 调整通信天线方向
+                      meshRef.current.rotateZ(Math.PI / 3)
                     }
+                    // 只对非空间站卫星添加缓慢自转
+                    const slowRotationSpeed = 0.1
+                    meshRef.current.rotateY(accumulatedTimeRef.current * slowRotationSpeed * 0.01 * timeSpeed)
                   }
                   
                   // 添加缓慢的稳定自转（受时间系数控制）
@@ -701,6 +701,9 @@ const Satellite: React.FC<{
             } else if (name.includes('Starlink')) {
               meshRef.current.rotateZ(Math.PI / 3)
             }
+            // 只对非空间站卫星添加缓慢自转
+            const slowRotationSpeed = 0.1
+            meshRef.current.rotateY(accumulatedTimeRef.current * slowRotationSpeed * 0.01 * timeSpeed)
           }
           
           // 添加缓慢的稳定自转（受时间系数控制）
@@ -821,6 +824,9 @@ const Satellite: React.FC<{
           } else if (name.includes('Starlink')) {
             meshRef.current.rotateZ(Math.PI / 3)
           }
+          // 只对非空间站卫星添加缓慢自转
+          const slowRotationSpeed = 0.1
+          meshRef.current.rotateY(accumulatedTimeRef.current * slowRotationSpeed * 0.01 * timeSpeed)
         }
         
         // 添加缓慢的稳定自转（受时间系数控制）
