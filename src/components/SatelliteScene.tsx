@@ -8,7 +8,7 @@ import * as THREE from 'three'
 import * as satellite from 'satellite.js'
 
 // NASA地球组件 - 地球本身不自转，通过场景旋转来模拟
-const NASAEarth: React.FC<{ timeSpeed: number; earthRef: React.RefObject<THREE.Group> }> = ({ timeSpeed, earthRef }) => {
+const NASAEarth: React.FC<{ timeSpeed: number; earthRef: React.RefObject<THREE.Group>; useRealScale: boolean }> = ({ timeSpeed, earthRef, useRealScale }) => {
   const earthMeshRef = useRef<THREE.Mesh>(null)
   const cloudsRef = useRef<THREE.Mesh>(null)
 
@@ -61,7 +61,7 @@ const NASAEarth: React.FC<{ timeSpeed: number; earthRef: React.RefObject<THREE.G
       
       {/* 大气层光晕 */}
       <mesh>
-        <sphereGeometry args={[5.3, 32, 32]} />
+        <sphereGeometry args={[useRealScale? 5.078 : 5.3, 32, 32]} />
         <meshBasicMaterial 
           color="#60a5fa" 
           transparent 
@@ -856,7 +856,7 @@ const SatelliteScene: React.FC = () => {
       {/* 地球系统（地球+卫星）- 可以选择是否跟随地球自转 */}
       <group ref={earthSystemRef}>
         {/* NASA地球 */}
-        <NASAEarth timeSpeed={timeSpeed} earthRef={earthSystemRef} />
+        <NASAEarth timeSpeed={timeSpeed} earthRef={earthSystemRef} useRealScale={useRealScale}/>
 
         {/* 简化轨道卫星系统 - 与地球在同一旋转系统中（备用） */}
         {satellites.map((sat) => (
