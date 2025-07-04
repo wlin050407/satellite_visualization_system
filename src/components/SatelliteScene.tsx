@@ -536,11 +536,41 @@ const Satellite: React.FC<{
                 
                 // 设置卫星位置
                 meshRef.current.position.set(sceneX, sceneY, sceneZ)
-                // meshRef.current.lookAt(0, 0, 0) // 移除每帧lookAt，避免疯狂自转
-                // 现实自转：按rotationPeriod平滑自转（与轨道相位同步）
+                
+                // 自然姿态控制：让卫星面向地球表面，保持稳定姿态
                 if (timeSpeed !== 0) {
-                  const orbitPhase = (accumulatedTimeRef.current % rotationPeriod) / rotationPeriod;
-                  meshRef.current.rotation.y = orbitPhase * 2 * Math.PI;
+                  // 计算从卫星到地球中心的方向向量
+                  const toEarth = new THREE.Vector3(-sceneX, -sceneY, -sceneZ).normalize()
+                  
+                  // 创建朝向矩阵，让卫星的Z轴（通常指向地球）对准地球中心
+                  const lookAtMatrix = new THREE.Matrix4()
+                  lookAtMatrix.lookAt(
+                    new THREE.Vector3(0, 0, 0), // 卫星当前位置
+                    new THREE.Vector3(sceneX, sceneY, sceneZ), // 地球中心
+                    new THREE.Vector3(0, 1, 0) // 上方向（保持卫星的"上"方向）
+                  )
+                  
+                  // 应用朝向矩阵
+                  meshRef.current.setRotationFromMatrix(lookAtMatrix)
+                  
+                  // 根据卫星类型添加特定的姿态调整
+                  if (name.includes('ISS') || name.includes('Tiangong')) {
+                    // 空间站：保持水平姿态，太阳能板朝向太阳
+                    meshRef.current.rotateZ(Math.PI / 2) // 调整太阳能板方向
+                  } else if (name.includes('Hubble')) {
+                    // 望远镜：保持观测姿态，避免过度旋转
+                    meshRef.current.rotateY(Math.PI / 4) // 轻微调整观测角度
+                  } else if (name.includes('GPS')) {
+                    // GPS卫星：保持天线朝向地球
+                    meshRef.current.rotateX(-Math.PI / 6) // 天线略微向下
+                  } else if (name.includes('Starlink')) {
+                    // Starlink：保持通信天线朝向
+                    meshRef.current.rotateZ(Math.PI / 3) // 调整通信天线方向
+                  }
+                  
+                  // 添加缓慢的稳定自转（受时间系数控制）
+                  const slowRotationSpeed = 0.1 // 非常慢的自转
+                  meshRef.current.rotateY(accumulatedTimeRef.current * slowRotationSpeed * 0.01 * timeSpeed)
                 }
                 
                 // 计算地理坐标用于显示（可选）
@@ -579,7 +609,38 @@ const Satellite: React.FC<{
         
         // 设置卫星在轨道坐标系中的位置
         meshRef.current.position.set(x, y, z)
-        // meshRef.current.lookAt(0, 0, 0) // 移除每帧lookAt，避免疯狂自转
+        
+        // 简化轨道模式的自然姿态控制
+        if (timeSpeed !== 0) {
+          // 计算从卫星到地球中心的方向向量
+          const toEarth = new THREE.Vector3(-x, -y, -z).normalize()
+          
+          // 创建朝向矩阵，让卫星面向地球
+          const lookAtMatrix = new THREE.Matrix4()
+          lookAtMatrix.lookAt(
+            new THREE.Vector3(0, 0, 0), // 卫星当前位置
+            new THREE.Vector3(x, y, z), // 地球中心
+            new THREE.Vector3(0, 1, 0) // 上方向
+          )
+          
+          // 应用朝向矩阵
+          meshRef.current.setRotationFromMatrix(lookAtMatrix)
+          
+          // 根据卫星类型添加特定的姿态调整
+          if (name.includes('ISS') || name.includes('Tiangong')) {
+            meshRef.current.rotateZ(Math.PI / 2)
+          } else if (name.includes('Hubble')) {
+            meshRef.current.rotateY(Math.PI / 4)
+          } else if (name.includes('GPS')) {
+            meshRef.current.rotateX(-Math.PI / 6)
+          } else if (name.includes('Starlink')) {
+            meshRef.current.rotateZ(Math.PI / 3)
+          }
+          
+          // 添加缓慢的稳定自转（受时间系数控制）
+          const slowRotationSpeed = 0.1
+          meshRef.current.rotateY(accumulatedTimeRef.current * slowRotationSpeed * 0.01 * timeSpeed)
+        }
         
         // 更新运动状态
         setPositionInfo(`${(angle * 180 / Math.PI).toFixed(0)}°,R=${orbitRadius.toFixed(1)}`)
@@ -635,7 +696,38 @@ const Satellite: React.FC<{
       
       // 直接使用预计算的轨道点
       meshRef.current.position.copy(currentPoint)
-      // meshRef.current.lookAt(0, 0, 0) // 移除每帧lookAt，避免疯狂自转
+      
+      // 路径插值模式的自然姿态控制
+      if (timeSpeed !== 0) {
+        // 计算从卫星到地球中心的方向向量
+        const toEarth = new THREE.Vector3(-currentPoint.x, -currentPoint.y, -currentPoint.z).normalize()
+        
+        // 创建朝向矩阵
+        const lookAtMatrix = new THREE.Matrix4()
+        lookAtMatrix.lookAt(
+          new THREE.Vector3(0, 0, 0), // 卫星当前位置
+          currentPoint, // 地球中心
+          new THREE.Vector3(0, 1, 0) // 上方向
+        )
+        
+        // 应用朝向矩阵
+        meshRef.current.setRotationFromMatrix(lookAtMatrix)
+        
+        // 根据卫星类型添加特定的姿态调整
+        if (name.includes('ISS') || name.includes('Tiangong')) {
+          meshRef.current.rotateZ(Math.PI / 2)
+        } else if (name.includes('Hubble')) {
+          meshRef.current.rotateY(Math.PI / 4)
+        } else if (name.includes('GPS')) {
+          meshRef.current.rotateX(-Math.PI / 6)
+        } else if (name.includes('Starlink')) {
+          meshRef.current.rotateZ(Math.PI / 3)
+        }
+        
+        // 添加缓慢的稳定自转（受时间系数控制）
+        const slowRotationSpeed = 0.1
+        meshRef.current.rotateY(accumulatedTimeRef.current * slowRotationSpeed * 0.01 * timeSpeed)
+      }
       
       // 计算显示用的地理坐标（近似）
       const distance = currentPoint.length()
