@@ -18,6 +18,47 @@ const TimeControlPanel: React.FC = () => {
     getCurrentEffectiveTime
   } = useAppStore()
 
+  // 对数轴映射函数 - 优化版本
+  const logToLinear = (logValue: number): number => {
+    // 将滑块值（0-100）映射到对数时间速度
+    // 支持 -10000 到 10000 的范围，但更平滑
+    if (logValue === 50) return 0 // 中心点对应暂停
+    
+    const sign = logValue >= 50 ? 1 : -1
+    const absValue = Math.abs(logValue - 50) / 50 // 0-1
+    
+    // 使用更平滑的对数映射
+    let logSpeed: number
+    if (absValue < 0.1) {
+      // 接近中心点时使用线性映射，避免过于敏感
+      logSpeed = absValue * 10
+    } else {
+      // 远离中心点时使用对数映射
+      logSpeed = Math.pow(10, (absValue - 0.1) * 3.5) + 1
+    }
+    
+    return sign * logSpeed
+  }
+
+  const linearToLog = (linearValue: number): number => {
+    // 将线性时间速度映射回滑块值
+    if (linearValue === 0) return 50 // 暂停状态对应中心点
+    
+    const sign = linearValue >= 0 ? 1 : -1
+    const absValue = Math.abs(linearValue)
+    
+    let logValue: number
+    if (absValue <= 1) {
+      // 小值时使用线性映射
+      logValue = absValue / 10
+    } else {
+      // 大值时使用对数映射
+      logValue = 0.1 + (Math.log10(absValue - 1) / 3.5)
+    }
+    
+    return 50 + sign * logValue * 50
+  }
+
   const [isExpanded, setIsExpanded] = useState(false)
   const [customTimeInput, setCustomTimeInput] = useState('')
   const [displayTime, setDisplayTime] = useState(new Date())
@@ -53,8 +94,8 @@ const TimeControlPanel: React.FC = () => {
   // 获取时间状态显示文本
   const getTimeStatusText = () => {
     if (isPaused) return t.paused
-    if (timeSpeed < 0) return `${Math.abs(timeSpeed)}x ${t.reversing}`
-    if (timeSpeed > 0) return `${timeSpeed}x ${t.forwarding}`
+    if (timeSpeed < 0) return `${Math.abs(timeSpeed).toFixed(2)}x ${t.reversing}`
+    if (timeSpeed > 0) return `${timeSpeed.toFixed(2)}x ${t.forwarding}`
     return t.paused
   }
 
@@ -149,7 +190,10 @@ const TimeControlPanel: React.FC = () => {
           {/* 时间速度控制和播放按钮 */}
           <div style={{ marginBottom: '16px' }}>
             <label style={{ display: 'block', marginBottom: '12px', fontSize: '13px', color: '#94a3b8', fontWeight: '500' }}>
-              {t.timeSpeed}: {isPaused ? t.paused : `${timeSpeed.toFixed(1)}x`}
+              {t.timeSpeed}: {isPaused ? t.paused : `${timeSpeed.toFixed(2)}x`}
+              <small style={{ display: 'block', color: '#64748b', fontSize: '10px', marginTop: '2px' }}>
+                {language === 'zh' ? '对数轴控制 - 精细调节' : 'Logarithmic control - fine adjustment'}
+              </small>
             </label>
             
             {/* 播放控制按钮 - 放在速度条上方 */}
@@ -163,7 +207,16 @@ const TimeControlPanel: React.FC = () => {
             }}>
               {/* 倒退按钮 - 双左箭头 */}
               <button 
-                onClick={() => setTimeSpeed(timeSpeed <= 0 ? Math.max(timeSpeed - 0.5, -20) : -1)}
+                onClick={() => {
+                  if (timeSpeed <= 0) {
+                    // 对数递减
+                    const currentLog = linearToLog(timeSpeed)
+                    const newLog = Math.max(currentLog - 5, 0) // 每次减少5个对数单位
+                    setTimeSpeed(logToLinear(newLog))
+                  } else {
+                    setTimeSpeed(-1)
+                  }
+                }}
                 style={{ 
                   width: '40px',
                   height: '40px',
@@ -245,7 +298,16 @@ const TimeControlPanel: React.FC = () => {
 
               {/* 快进按钮 - 双右箭头 */}
               <button 
-                onClick={() => setTimeSpeed(timeSpeed >= 0 ? Math.min(timeSpeed + 0.5, 20) : 1)}
+                onClick={() => {
+                  if (timeSpeed >= 0) {
+                    // 对数递增
+                    const currentLog = linearToLog(timeSpeed)
+                    const newLog = Math.min(currentLog + 5, 100) // 每次增加5个对数单位
+                    setTimeSpeed(logToLinear(newLog))
+                  } else {
+                    setTimeSpeed(1)
+                  }
+                }}
                 style={{ 
                   width: '40px',
                   height: '40px',
@@ -288,14 +350,14 @@ const TimeControlPanel: React.FC = () => {
               </button>
             </div>
 
-            {/* 速度滑块 */}
+            {/* 对数速度滑块 */}
             <input
               type="range"
-              min="-20.0"
-              max="20.0"
+              min="0"
+              max="100"
               step="0.1"
-              value={timeSpeed}
-              onChange={(e) => setTimeSpeed(parseFloat(e.target.value))}
+              value={linearToLog(timeSpeed)}
+              onChange={(e) => setTimeSpeed(logToLinear(parseFloat(e.target.value)))}
               style={{
                 width: '100%',
                 marginBottom: '8px',

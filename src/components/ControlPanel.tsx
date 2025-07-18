@@ -14,6 +14,7 @@ const ControlPanel: React.FC = () => {
     setFollowEarthRotation,
     useRealScale,
     setUseRealScale,
+
     timeSpeed,
     isTimeCustom
   } = useAppStore()
@@ -104,6 +105,8 @@ const ControlPanel: React.FC = () => {
         </button>
       </div>
 
+
+
       {/* TLE轨道状态显示 */}
       <div className="control-group">
         <label>{t.orbitDataStatus}</label>
@@ -135,7 +138,7 @@ const ControlPanel: React.FC = () => {
         <div>{t.orbits}: {showOrbits ? t.show : t.hide}</div>
         <div>{t.labels}: {showLabels ? t.show : t.hide}</div>
         <div>{t.scale}: {useRealScale ? t.real : t.beautiful}</div>
-        <div>{t.speed}: {timeSpeed === 0 ? t.paused : `${timeSpeed}x`}</div>
+        <div>{t.speed}: {timeSpeed === 0 ? t.paused : `${timeSpeed.toFixed(2)}x`}</div>
         <div>{t.time}: {isTimeCustom ? t.custom : t.realTime}</div>
       </div>
 

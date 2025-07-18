@@ -39,6 +39,12 @@ interface AppState {
   // 真实比例轨道开关
   useRealScale: boolean
   setUseRealScale: (useReal: boolean) => void
+
+  // 时间重置标志
+  timeResetFlag: number
+  triggerTimeReset: () => void
+
+
 }
 
 export const useAppStore = create<AppState>((set, get) => ({
@@ -136,13 +142,18 @@ export const useAppStore = create<AppState>((set, get) => ({
     }
   },
   
-  resetToRealTime: () => set({ 
-    currentTime: new Date(), 
-    isTimeCustom: false, 
-    isPaused: false, 
-    timeSpeed: 1.0,
-    timeBasePoint: Date.now()
-  }),
+  resetToRealTime: () => {
+    const state = get()
+    set({ 
+      currentTime: new Date(), 
+      isTimeCustom: false, 
+      isPaused: false, 
+      timeSpeed: 1.0,
+      timeBasePoint: Date.now()
+    })
+    // 触发时间重置标志，通知卫星组件重置累积时间
+    state.triggerTimeReset()
+  },
 
   // 获取当前有效时间（考虑自定义时间和速度）
   getCurrentEffectiveTime: () => {
@@ -162,4 +173,10 @@ export const useAppStore = create<AppState>((set, get) => ({
   // 真实比例轨道开关
   useRealScale: false,
   setUseRealScale: (useReal) => set({ useRealScale: useReal }),
+
+  // 时间重置标志
+  timeResetFlag: 0,
+  triggerTimeReset: () => set((state) => ({ timeResetFlag: state.timeResetFlag + 1 })),
+
+
 })) 

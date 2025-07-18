@@ -9,6 +9,8 @@ import * as satellite from 'satellite.js'
 
 // NASA地球组件 - 地球本身不自转，通过场景旋转来模拟
 const NASAEarth: React.FC<{ timeSpeed: number; earthRef: React.RefObject<THREE.Group> }> = ({ timeSpeed, earthRef }) => {
+  // 固定的大气速度系数
+  const atmosphereSpeedFactor = 0.3
   const earthMeshRef = useRef<THREE.Mesh>(null)
   const cloudsRef = useRef<THREE.Mesh>(null)
 
@@ -41,7 +43,7 @@ const NASAEarth: React.FC<{ timeSpeed: number; earthRef: React.RefObject<THREE.G
   useFrame((state, delta) => {
     if (timeSpeed === 0) return; // 暂停时彻底冻结所有动画推进
     if (cloudsRef.current) {
-      cloudsRef.current.rotation.y += delta * 0.03 * timeSpeed // 云层相对地球缓慢移动，速度受timeSpeed控制
+      cloudsRef.current.rotation.y += delta * 0.03 * atmosphereSpeedFactor // 云层使用独立的大气速度系数
     }
   })
 
@@ -193,11 +195,12 @@ const Satellite: React.FC<{
   const meshRef = useRef<THREE.Group>(null)
   const orbitRef = useRef<THREE.Group>(null)
   const selectedRingRef = useRef<THREE.Mesh>(null)
-  const { selectedSatellite, setSelectedSatellite } = useAppStore()
+  const { selectedSatellite, setSelectedSatellite, timeResetFlag } = useAppStore()
   // 累积时间系统 - 避免timeSpeed改变时的跳跃
   const accumulatedTimeRef = useRef(0)
   const lastFrameTimeRef = useRef(0)
   const lastTimeSpeedRef = useRef(timeSpeed)
+  const lastResetFlagRef = useRef(timeResetFlag)
   // 运动状态指示器（只保留实际用到的positionInfo）
   const [positionInfo, setPositionInfo] = useState('');
   
@@ -438,22 +441,32 @@ const Satellite: React.FC<{
     );
   }, [modelType, color])
 
-  // 轨道周期（秒）设定：ISS、天宫、Hubble、Starlink、Sentinel为各自轨道周期，GPS为12小时
-  let rotationPeriod = 5400; // 默认90分钟一圈
-  if (modelType === 'iss' || modelType === 'tiangong') {
-    rotationPeriod = 5580; // 93分钟一圈
-  } else if (modelType === 'hubble' || modelType === 'starlink') {
-    rotationPeriod = 5700; // 95分钟一圈
+  // 计算真实的轨道角速度（rad/s）
+  // 轨道周期（秒）：ISS/天宫=93分钟，Hubble/Starlink=95分钟，Sentinel=100分钟，GPS=12小时
+  let orbitPeriod = 5580; // 默认93分钟一圈
+  if (modelType === 'hubble' || modelType === 'starlink') {
+    orbitPeriod = 5700; // 95分钟一圈
   } else if (modelType === 'sentinel') {
-    rotationPeriod = 6000; // 100分钟一圈
+    orbitPeriod = 6000; // 100分钟一圈
   } else if (modelType === 'gps') {
-    rotationPeriod = 43200; // 12小时一圈
+    orbitPeriod = 43200; // 12小时一圈
   }
+  
+  // 计算角速度：2π / 轨道周期
+  const angularSpeed = (2 * Math.PI) / orbitPeriod // rad/s
 
   // 真实轨道运动计算
   useFrame((state, delta) => {
     if (timeSpeed === 0) return; // 暂停时彻底冻结所有动画推进
     if (orbitRef.current && meshRef.current) {
+      // 检查是否需要重置累积时间
+      if (timeResetFlag !== lastResetFlagRef.current) {
+        accumulatedTimeRef.current = 0
+        lastFrameTimeRef.current = state.clock.elapsedTime
+        lastResetFlagRef.current = timeResetFlag
+        console.log(`${name}: 时间重置，累积时间清零`)
+      }
+      
       // 累积时间计算 - 平滑处理timeSpeed变化
       const currentFrameTime = state.clock.elapsedTime
       
@@ -550,12 +563,12 @@ const Satellite: React.FC<{
                     const orbitTangent = new THREE.Vector3()
                     if (useRealOrbit && realOrbitPath.length > 0) {
                       // 真实轨道：计算当前位置的切向量
-                      const currentIndex = Math.floor((accumulatedTimeRef.current % rotationPeriod) / rotationPeriod * realOrbitPath.length)
+                      const currentIndex = Math.floor((accumulatedTimeRef.current % orbitPeriod) / orbitPeriod * realOrbitPath.length)
                       const nextIndex = (currentIndex + 1) % realOrbitPath.length
                       orbitTangent.subVectors(realOrbitPath[nextIndex], realOrbitPath[currentIndex]).normalize()
                     } else {
                       // 简化轨道：使用圆形轨道的切向量
-                      const angle = accumulatedTimeRef.current * speed + initialAngle
+                      const angle = accumulatedTimeRef.current * angularSpeed + initialAngle
                       orbitTangent.set(-Math.sin(angle), 0, Math.cos(angle))
                     }
                     
@@ -637,7 +650,7 @@ const Satellite: React.FC<{
         }
       } else {
         // 简化轨道模式 - 卫星在轨道坐标系中运动
-        const angle = accumulatedTimeRef.current * speed + initialAngle
+        const angle = accumulatedTimeRef.current * angularSpeed + initialAngle
         
         // 简单的圆形轨道运动
         const x = Math.cos(angle) * orbitRadius
@@ -657,7 +670,7 @@ const Satellite: React.FC<{
             // 空间站：使用轨道法线保持稳定姿态，避免反转时翻滚
             
             // 计算轨道切向量（卫星运动方向）
-            const angle = accumulatedTimeRef.current * speed + initialAngle
+            const angle = accumulatedTimeRef.current * angularSpeed + initialAngle
             const orbitTangent = new THREE.Vector3(-Math.sin(angle), 0, Math.cos(angle))
             
             // 计算轨道法向量（始终指向轨道平面法线方向）
@@ -742,12 +755,11 @@ const Satellite: React.FC<{
     if (path.length === 0 || !meshRef.current) return
     
     // 计算当前应该在轨道路径上的哪个点
-    const orbitPeriod = 90 * 60 // 90分钟轨道周期（秒）
     const accelerationFactor = 1 // 基础加速倍数，改为1实现真实速度
     const acceleratedTime = accumulatedTimeRef.current * accelerationFactor
     
     // 计算在轨道周期中的位置（0-1）
-    const orbitPosition = (acceleratedTime % orbitPeriod) / orbitPeriod
+    const orbitPosition = (acceleratedTime % (orbitPeriod * 1000)) / (orbitPeriod * 1000)
     
     // 计算精确的轨道点位置（支持插值）
     const exactIndex = orbitPosition * path.length
@@ -1042,8 +1054,11 @@ const SatelliteScene: React.FC = () => {
         // 不跟随地球自转时，地球系统保持固定朝向
         earthSystemRef.current.rotation.y = 0
       } else {
-        // 跟随地球自转时，地球系统随时间慢速旋转
-        earthSystemRef.current.rotation.y += delta * 0.002 * timeSpeed // 很慢的自转速度
+        // 跟随地球自转时，地球系统按真实速度旋转
+        // 地球自转周期：24小时 = 86400秒，角速度：2π/86400 ≈ 0.0000727 rad/s
+        // 在渲染循环中，delta是秒数，所以直接使用角速度
+        const earthRotationSpeed = 0.0000727 // rad/s
+        earthSystemRef.current.rotation.y += delta * earthRotationSpeed * timeSpeed
       }
     }
   })
